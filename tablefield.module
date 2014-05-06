@@ -315,7 +315,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
 
   foreach ($items as $delta => $table) {
     $raw = unserialize($table['value']);
-    // check for table accessibility array
+    // check for table caption
     if (isset($raw['caption'])) {
       $caption = $raw['caption'];
     }
@@ -544,12 +544,15 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     $raw = unserialize($items[$delta]['value']);
     $caption = $raw['caption'];
   }
+
+  //Provide caption and details fields to describe the data contained in the table.
   $element['tablefield']['caption'] = array(
     '#title' => t('Caption'),
     '#description' => t('Provide a brief decription of the data the table contains, this is associated to the table and helps Assitive Technology, like screen readers, better describe your tables content.'),
     '#type' => 'textfield',
     '#default_value' => isset($caption) ? $caption : '',
   );
+
 
   // If the user doesn't have rebuild perms, we pass along the data as a value.
   // Otherwise, we will provide form elements to specify the size and ajax rebuild.
