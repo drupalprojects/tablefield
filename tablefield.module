@@ -315,7 +315,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
 
   foreach ($items as $delta => $table) {
     $raw = unserialize($table['value']);
-    // check for table caption
+    // check for table captionwq
     if (isset($raw['caption'])) {
       $caption = $raw['caption'];
     }
@@ -550,7 +550,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#title' => t('Caption'),
     '#description' => t('Provide a brief decription of the data the table contains, this is associated to the table and helps Assitive Technology, like screen readers, better describe your tables content.'),
     '#type' => 'textfield',
-    '#default_value' => isset($caption) ? $caption : '',
+    '#default_value' => isset($caption) ? $caption : ''
   );
 
 
