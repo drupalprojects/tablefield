@@ -561,13 +561,13 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   }
   $element['tablefield']['accessibility']['caption'] = array(
     '#title' => t('Caption'),
-    '#description' => t('Provide a brief decription of the data the table contains, this is associated to the table and helps Assitive Technology, like screen readers, better describe your content.'),
+    '#description' => t('Provide a brief decription of the data the table contains, this is associated to the table and helps Assitive Technology, like screen readers, better describe your tables content.'),
     '#type' => 'textfield',
     '#default_value' => isset($caption) ? $caption : '',
   );
   $element['tablefield']['accessibility']['summary'] = array(
     '#title' => t('Summary'),
-    '#description' => t('The summary attribute helps describe the structure of complex tables.'),
+    '#description' => t('The summary attribute helps describe the structure of complex tables. It is better to have simple tables, but this attribute can help when that is not possible.'),
     '#type' => 'textfield',
     '#default_value' => isset($summary) ? $summary : '',
   );
