@@ -546,7 +546,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   // table accessibility fields
   $element['tablefield']['accessibility'] = array(
     '#title' => t('Accessibility'),
-    '#description' => t('Fields to help improve table accessibility'),
+    '#description' => t('Additional fields to help better describe the data in your table.'),
     '#attributes' => array('id' => 'form-tablefield-' . $field['field_name'] . '-' . $delta . '-accessibility', 'class' => array('form-tablefield-accessibility')),
     '#type' => 'fieldset',
     '#tree' => TRUE,
