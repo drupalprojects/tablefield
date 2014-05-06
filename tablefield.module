@@ -279,7 +279,7 @@ function tablefield_field_is_empty($item, $field) {
   }
 
   // Remove the preference fields to see if the table cells are all empty
-  unset($item['tablefield']['accessibility']);
+  unset($item['tablefield']['caption']);
   unset($item['tablefield']['rebuild']);
   unset($item['tablefield']['import']);
   if (!empty($item['tablefield'])) {
@@ -316,9 +316,8 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
   foreach ($items as $delta => $table) {
     $raw = unserialize($table['value']);
     // check for table accessibility array
-    if (isset($raw['accessibility'])) {
-      $caption = $raw['accessibility']['caption'];
-      $summary = $raw['accessibility']['summary'];
+    if (isset($raw['caption'])) {
+      $caption = $raw['caption'];
     }
     // Rationalize the stored data
     if (!empty($table['tablefield'])) {
@@ -370,8 +369,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
         'entity_id' => $entity_id,
         'field_name' => $field['field_name'],
         'langcode' => $langcode,
-        'caption' => $caption,
-        'summary' => $summary,
+        'caption' => $caption
       ));
     }
 
@@ -542,34 +540,15 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $element['tablefield']['t_break' . $i] = array(
     '#markup' => '</table>',
   );
-
-  // table accessibility fields
-  $element['tablefield']['accessibility'] = array(
-    '#title' => t('Accessibility'),
-    '#description' => t('Additional fields to help better describe the data in your table.'),
-    '#attributes' => array('id' => 'form-tablefield-' . $field['field_name'] . '-' . $delta . '-accessibility', 'class' => array('form-tablefield-accessibility')),
-    '#type' => 'fieldset',
-    '#tree' => TRUE,
-    '#collapsible' => TRUE,
-    '#prefix' => '<div id="tablefield-' . $field['field_name'] . '-' . $delta . '-accessibility-wrapper">',
-    '#suffix' => '</div>',
-  );
   if (isset($items[$delta]['value'])) {
     $raw = unserialize($items[$delta]['value']);
-    $caption = $raw['accessibility']['caption'];
-    $summary = $raw['accessibility']['summary'];
+    $caption = $raw['caption'];
   }
-  $element['tablefield']['accessibility']['caption'] = array(
+  $element['tablefield']['caption'] = array(
     '#title' => t('Caption'),
     '#description' => t('Provide a brief decription of the data the table contains, this is associated to the table and helps Assitive Technology, like screen readers, better describe your tables content.'),
     '#type' => 'textfield',
     '#default_value' => isset($caption) ? $caption : '',
-  );
-  $element['tablefield']['accessibility']['summary'] = array(
-    '#title' => t('Summary'),
-    '#description' => t('The summary attribute helps describe the structure of complex tables. It is better to have simple tables, but this attribute can help when that is not possible.'),
-    '#type' => 'textfield',
-    '#default_value' => isset($summary) ? $summary : '',
   );
 
   // If the user doesn't have rebuild perms, we pass along the data as a value.
@@ -820,7 +799,7 @@ function tablefield_rationalize_table($tablefield) {
     // Remove exterraneous form data
     $count_cols = $tablefield['rebuild']['count_cols'];
     $count_rows = $tablefield['rebuild']['count_rows'];
-    unset($tablefield['accessibility']);
+    unset($tablefield['caption']);
     unset($tablefield['rebuild']);
     unset($tablefield['import']);
 
@@ -851,8 +830,7 @@ function tablefield_theme() {
         'entity_id' => NULL,
         'field_name' => NULL,
         'langcode' => NULL,
-        'caption' => NULL,
-        'summary' => NULL,
+        'caption' => NULL
       ),
     ),
   );
@@ -866,8 +844,7 @@ function theme_tablefield_view($variables) {
     'id' => 'tablefield-' . $variables['delta'],
     'class' => array(
       'tablefield'
-    ),
-    'summary' => $variables['summary'],
+    )
   );
   // apply scope property to headers for accessibility
   if (is_array($variables['header'])) {
