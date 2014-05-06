@@ -542,7 +542,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $element['tablefield']['t_break' . $i] = array(
     '#markup' => '</table>',
   );
-  
+
   // table accessibility fields
   $element['tablefield']['accessibility'] = array(
     '#title' => t('Accessibility'),
@@ -560,14 +560,14 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     $summary = $raw['accessibility']['summary'];
   }
   $element['tablefield']['accessibility']['caption'] = array(
-    '#title' => t('Table Caption'),
-    '#description' => t('Improve description and accsessibility of this table with a caption'),
+    '#title' => t('Caption'),
+    '#description' => t('Provide a brief decription of the data the table contains, this is associated to the table and helps Assitive Technology, like screen readers, better describe your content.'),
     '#type' => 'textfield',
     '#default_value' => isset($caption) ? $caption : '',
   );
   $element['tablefield']['accessibility']['summary'] = array(
     '#title' => t('Summary'),
-    '#description' => t('Improve accsessibility of this table with a summary. This is useful for screen readers.'),
+    '#description' => t('The summary attribute helps describe the structure of complex tables.'),
     '#type' => 'textfield',
     '#default_value' => isset($summary) ? $summary : '',
   );
