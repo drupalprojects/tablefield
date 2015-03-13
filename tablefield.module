@@ -268,6 +268,7 @@ function tablefield_field_is_empty($item, $field) {
   }
 
   // Remove the preference fields to see if the table cells are all empty
+  unset($item['tablefield']['caption']);
   unset($item['tablefield']['rebuild']);
   unset($item['tablefield']['import']);
   if (!empty($item['tablefield'])) {
@@ -302,7 +303,11 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
   $formatter = $display['type'];
 
   foreach ($items as $delta => $table) {
-
+    $raw = unserialize($table['value']);
+    // check for table captionwq
+    if (isset($raw['caption'])) {
+      $caption = $raw['caption'];
+    }
     // Rationalize the stored data
     if (!empty($table['tabledata'])) {
       $tabledata = $table['tabledata'];
@@ -353,6 +358,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
         'entity_id' => $entity_id,
         'field_name' => $field['field_name'],
         'langcode' => $langcode,
+        'caption' => $caption
       ));
     }
 
@@ -554,6 +560,19 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $element['tablefield']['t_break' . $i] = array(
     '#markup' => '</table>',
   );
+  if (isset($items[$delta]['value'])) {
+    $raw = unserialize($items[$delta]['value']);
+    $caption = $raw['caption'];
+  }
+
+  //Provide caption and details fields to describe the data contained in the table.
+  $element['tablefield']['caption'] = array(
+    '#title' => t('Caption'),
+    '#description' => t('Provide a brief decription of the data the table contains, this is associated to the table and helps Assitive Technology, like screen readers, better describe your tables content.'),
+    '#type' => 'textfield',
+    '#default_value' => isset($caption) ? $caption : ''
+  );
+
 
   // If the user doesn't have rebuild perms, we pass along the data as a value.
   // Otherwise, we will provide form elements to specify the size and ajax rebuild.
@@ -776,6 +795,7 @@ function tablefield_rationalize_table($tablefield) {
     // Remove exterraneous form data
     $count_cols = $tablefield['rebuild']['count_cols'];
     $count_rows = $tablefield['rebuild']['count_rows'];
+    unset($tablefield['caption']);
     unset($tablefield['rebuild']);
     unset($tablefield['import']);
 
@@ -806,6 +826,7 @@ function tablefield_theme() {
         'entity_id' => NULL,
         'field_name' => NULL,
         'langcode' => NULL,
+        'caption' => NULL
       ),
     ),
   );
@@ -819,9 +840,14 @@ function theme_tablefield_view($variables) {
     'id' => 'tablefield-' . $variables['delta'],
     'class' => array(
       'tablefield'
-    ),
+    )
   );
-
+  // apply scope property to headers for accessibility
+  if (is_array($variables['header'])) {
+    foreach($variables['header'] as &$header) {
+      $header['scope'] = 'col';
+    }
+  }
   // If the user has access to the csv export option, display it now.
   $export = '';
   if ($variables['export'] && user_access('export tablefield')) {
@@ -835,6 +861,7 @@ function theme_tablefield_view($variables) {
         'header' => $variables['header'],
         'rows' => $variables['rows'],
         'attributes' => $attributes,
+        'caption' => $variables['caption'],
       )
     )
     . $export
