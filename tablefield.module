@@ -480,6 +480,10 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $rebuild_id = "$id-rebuild";
   $import_id = "$id-import";
 
+  // default table size
+  $default_size['count_cols'] = isset($instance['default_value'][0]['tablefield']['rebuild']['count_cols']) ? $instance['default_value'][0]['tablefield']['rebuild']['count_cols'] : 5;
+  $default_size['count_rows'] = isset($instance['default_value'][0]['tablefield']['rebuild']['count_rows']) ? $instance['default_value'][0]['tablefield']['rebuild']['count_rows'] : 5;
+
   // Establish a list of saved/submitted/default values
   if (isset($form_state['clicked_button']['#value']) && $form_state['clicked_button']['#name'] == $rebuild_id) {
     // Rebuilding table rows/cols
@@ -489,7 +493,11 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   elseif (isset($form_state['clicked_button']['#value']) && $form_state['clicked_button']['#name'] == $import_id) {
     // Importing CSV data
     tablefield_import_csv($form, $form_state, $langcode, $import_id, $tablefield_parents);
-    $default_value = tablefield_rationalize_table(drupal_array_get_nested_value($form_state['input'], $tablefield_parents));
+    $default_value = drupal_array_get_nested_value($form_state['input'], $tablefield_parents);
+    if (empty($default_value['rebuild'])) {
+      $default_value['rebuild'] = $default_size;
+    }
+    $default_value = tablefield_rationalize_table($default_value);
   }
   elseif ($form_state['submitted'] && isset($items[$delta]) && isset($items[$delta]['tablefield']) && !isset($form_state['clicked_button']['#value'])) {
     // A form was submitted
@@ -512,14 +520,15 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
       if (!empty($field['settings']['lock_values'])) {
         $default_value = tablefield_fill_locked_values($default_value, $instance['default_value'][0]['tablefield']);
       }
+
+      if (empty($default_value['rebuild'])) {
+        $default_value['rebuild'] = $default_size;
+      }
       $default_value = tablefield_rationalize_table($default_value);
     }
     else {
       $default_value = tablefield_rationalize_table($instance['default_value'][0]['tablefield']);
     }
-
-    $default_count_cols = isset($items[0]['tablefield']['rebuild']['count_cols']) ? $items[0]['tablefield']['rebuild']['count_cols'] : 5;
-    $default_count_rows = isset($items[0]['tablefield']['rebuild']['count_cols']) ? $items[0]['tablefield']['rebuild']['count_cols'] : 5;
   }
 
   if (!empty($instance['description'])) {
@@ -554,7 +563,15 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   }
 
   // Determine how many rows/columns are saved in the data
-  if (!empty($default_value)) {
+
+  // Override the number of rows/columns if the user rebuilds the form.
+  // $tablefield_rebuild variable was set above
+  if (isset($form_state['clicked_button']['#value']) && $form_state['clicked_button']['#name'] == $rebuild_id) {
+    $count_cols = $tablefield_rebuild['rebuild']['count_cols'];
+    $count_rows = $tablefield_rebuild['rebuild']['count_rows'];
+    drupal_set_message(t('Table structure rebuilt.'), 'status', FALSE);
+  }
+  else if (!empty($default_value)) {
     $count_rows = count($default_value);
     $count_cols = 0;
     foreach ($default_value as $row) {
@@ -565,16 +582,8 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     }
   }
   else {
-    $count_cols = isset($default_count_cols) ? $default_count_cols : 0;
-    $count_rows = isset($default_count_rows) ? $default_count_rows : 0;
-  }
-
-  // Override the number of rows/columns if the user rebuilds the form.
-  // $tablefield_rebuild variable was set above
-  if (isset($form_state['clicked_button']['#value']) && $form_state['clicked_button']['#name'] == $rebuild_id) {
-    $count_cols = $tablefield_rebuild['rebuild']['count_cols'];
-    $count_rows = $tablefield_rebuild['rebuild']['count_rows'];
-    drupal_set_message(t('Table structure rebuilt.'), 'status', FALSE);
+    $count_cols = $default_size['count_cols'];
+    $count_rows = $default_size['count_rows'];
   }
 
   // Render the form table
@@ -858,7 +867,7 @@ function tablefield_rationalize_table($tablefield) {
     foreach ($tablefield as $key => $value) {
       preg_match('/cell_(.*)_(.*)/', $key, $cell);
       // $cell[1] is row count $cell[2] is col count
-      if ((int) $cell[1] < $count_rows && (int) $cell['2'] < $count_cols) {
+      if ((int) $cell[1] < $count_rows && (int) $cell[2] < $count_cols) {
         $tabledata[$cell[1]][$cell[2]] = $value;
       }
     }
