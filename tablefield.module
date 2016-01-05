@@ -892,6 +892,7 @@ function tablefield_theme() {
         'field_name' => NULL,
         'langcode' => NULL,
         'formatter' => NULL,
+        'attributes' => array(),
       ),
     ),
   );
@@ -901,7 +902,7 @@ function tablefield_theme() {
  * Theme function for table view
  */
 function theme_tablefield_view($variables) {
-  $attributes = array(
+  $attributes = $variables['attributes'] + array(
     'id' => 'tablefield-' . $variables['delta'],
     'class' => array(
       'tablefield'
