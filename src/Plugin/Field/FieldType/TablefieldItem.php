@@ -215,7 +215,7 @@ class TablefieldItem extends FieldItemBase {
     // if yes, defaults are the tablefield config defaults
     // otherwise first consider field settings defaults
     if (empty($empty_rules['ignore_table_structure'])) {
-      $default_value = $this->getFieldDefinition()->default_value;
+      $default_value = $this->getFieldDefinition()->getDefaultValueLiteral();
 
       if (!$in_settings && !empty($default_value[$this->name])) {
         $default_structure = $default_value[$this->name]['rebuild'];

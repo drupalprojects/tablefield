@@ -10,7 +10,7 @@ namespace Drupal\tablefield\Plugin\Field\FieldFormatter;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FormatterBase;
 use Drupal\Core\Url;
-use Drupal\Component\Utility\String;
+use Drupal\Component\Utility\Html;
 //use Drupal\tablefield\Utility\Tablefield;
 
 /**
@@ -29,7 +29,7 @@ class TablefieldFormatter extends FormatterBase {
   /**
    * {@inheritdoc}
    */
-  public function viewElements(FieldItemListInterface $items) {
+  public function viewElements(FieldItemListInterface $items, $langcode = NULL) {
 
     $field = $items[0]->getFieldDefinition();
     $field_name = $field->getName();
@@ -43,24 +43,17 @@ class TablefieldFormatter extends FormatterBase {
     $elements = array();
   
     foreach ($items as $delta => $table) {
-  
-      // Rationalize the stored data
+
       if (!empty($table->value)) {
-        $tabledata = $table->value;//Tablefield::rationalizeTable($table->tablefield);
-      }
-  
-      // Run the table through input filters
-      if (isset($tabledata)) {
-        if (!empty($tabledata)) {
-          foreach ($tabledata as $row_key => $row) {
-            foreach ($row as $col_key => $cell) {
-              if (!empty($table->format)) {
-                $tabledata[$row_key][$col_key] = array('data' => check_markup($cell, $table->format), 'class' => array('row_' . $row_key, 'col_' . $col_key));
-              }
-              else {
-                $tabledata[$row_key][$col_key] = array('data' => String::checkPlain($cell), 'class' => array('row_' . $row_key, 'col_' . $col_key));
-              }
-            }
+        $tabledata = $table->value;//Tablefield::rationalizeTable($table->value);
+
+        // Run the table through input filters
+        foreach ($tabledata as $row_key => $row) {
+          foreach ($row as $col_key => $cell) {
+            $tabledata[$row_key][$col_key] = array(
+              'data' => empty($table->format) ? Html::escape($cell) : check_markup($cell, $table->format),
+              'class' => array('row_' . $row_key, 'col_' . $col_key)
+            );
           }
         }
   
