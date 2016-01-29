@@ -917,7 +917,7 @@ function theme_tablefield_view($variables) {
   }
 
   return '<div id="tablefield-wrapper-' . $variables['delta'] . '" class="tablefield-wrapper">'
-    . theme('table',
+    . theme('table__tablefield',
       array(
         'header' => $variables['header'],
         'rows' => $variables['rows'],
