@@ -31,7 +31,7 @@ class TablefieldFormatter extends FormatterBase {
    */
   public function viewElements(FieldItemListInterface $items, $langcode = NULL) {
 
-    $field = $items[0]->getFieldDefinition();
+    $field = $items->getFieldDefinition();
     $field_name = $field->getName();
     $field_settings = $field->getSettings();
 
