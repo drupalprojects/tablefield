@@ -111,7 +111,7 @@ class TablefieldFormatter extends FormatterBase {
             ),
           ),
           '#prefix' => '<div id="tablefield-wrapper-'. $delta .'" class="tablefield-wrapper">',
-          '#sufix' => 'div',
+          '#suffix' => '</div>',
         );
 
         $elements[$delta] = $render_array;
