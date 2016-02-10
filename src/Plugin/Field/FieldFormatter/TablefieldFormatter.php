@@ -14,11 +14,11 @@ use Drupal\Component\Utility\Html;
 //use Drupal\tablefield\Utility\Tablefield;
 
 /**
- * Plugin implementation of the 'geostore_wkt' formatter.
+ * Plugin implementation of the default Tablefield formatter.
  *
  * @FieldFormatter (
  *   id = "tablefield",
- *   label = @Translation("Tablular View"),
+ *   label = @Translation("Tabular View"),
  *   field_types = {
  *     "tablefield"
  *   }
@@ -89,7 +89,7 @@ class TablefieldFormatter extends FormatterBase {
           $render_array['export'] = array(
             '#type' => 'container',
             '#attributes' => array(
-              'id' => 'tablefield-export-link-' . $variables['delta'],
+              'id' => 'tablefield-export-link-' . $delta,
               'class' => 'tablefield-export-link',
             ),
           );
