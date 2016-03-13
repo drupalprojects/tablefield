@@ -35,9 +35,10 @@ class TablefieldWidget extends WidgetBase {
 
     $field = $items[0]->getFieldDefinition();
     $field_settings = $field->getSettings();
+    $field_widget_default = $field->getDefaultValueLiteral();
 
-    if (!empty($field->default_value[$delta])) {
-      $field_default = (object) $field->default_value[$delta];
+    if (!empty($field_widget_default[$delta])) {
+      $field_default = (object) $field_widget_default[$delta];
     }
 
     if (isset($items[$delta]->value)) {
