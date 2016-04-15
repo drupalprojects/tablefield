@@ -978,15 +978,6 @@ function tablefield_rtrim_rows($tabledata) {
  */
 function tablefield_rtrim_cols($tabledata) {
 
-  function transpose($array) {
-    $transposed = array();
-    foreach ($array as $key => $row) {
-      foreach ($row as $subkey => $value) {
-        $transposed[$subkey][$key] = $value;
-      }
-    }
-    return $transposed;
-  }
 
   $row_num = count($tabledata);
 
@@ -995,13 +986,23 @@ function tablefield_rtrim_cols($tabledata) {
   }
 
   // transpose the array
-  $tabledata = transpose($tabledata);
+  $tabledata = tablefield_transpose($tabledata);
 
   // trim trailing empty rows
   $tabledata = tablefield_rtrim_rows($tabledata);
 
   // transpose back
-  $tabledata = transpose($tabledata);
+  $tabledata = tablefield_transpose($tabledata);
 
   return $tabledata;
+}
+
+function tablefield_transpose($array) {
+  $transposed = array();
+  foreach ($array as $key => $row) {
+    foreach ($row as $subkey => $value) {
+      $transposed[$subkey][$key] = $value;
+    }
+  }
+  return $transposed;
 }
