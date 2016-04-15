@@ -484,52 +484,62 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $default_size['count_cols'] = isset($instance['default_value'][0]['tablefield']['rebuild']['count_cols']) ? $instance['default_value'][0]['tablefield']['rebuild']['count_cols'] : 5;
   $default_size['count_rows'] = isset($instance['default_value'][0]['tablefield']['rebuild']['count_rows']) ? $instance['default_value'][0]['tablefield']['rebuild']['count_rows'] : 5;
 
-  // Establish a list of saved/submitted/default values
-  if (isset($form_state['clicked_button']['#value']) && $form_state['clicked_button']['#name'] == $rebuild_id) {
-    // Rebuilding table rows/cols
-    $tablefield_rebuild = drupal_array_get_nested_value($form_state['tablefield_rebuild'], $tablefield_parents);
-    $default_value = tablefield_rationalize_table($tablefield_rebuild);
-  }
-  elseif (isset($form_state['clicked_button']['#value']) && $form_state['clicked_button']['#name'] == $import_id) {
-    // Importing CSV data
-    tablefield_import_csv($form, $form_state, $langcode, $import_id, $tablefield_parents);
-    $default_value = drupal_array_get_nested_value($form_state['input'], $tablefield_parents);
-    if (empty($default_value['rebuild'])) {
-      $default_value['rebuild'] = $default_size;
-    }
-    $default_value = tablefield_rationalize_table($default_value);
-  }
-  elseif ($form_state['submitted'] && isset($items[$delta]) && isset($items[$delta]['tablefield']) && !isset($form_state['clicked_button']['#value'])) {
-    // A form was submitted
-    $default_value = tablefield_rationalize_table($items[$delta]['tablefield']);
-  }
-  elseif (isset($items[$delta]['value']) && !isset($form_state['clicked_button']['#value'])) {
-    // Default from database (saved node)
-    $default_value = tablefield_rationalize_table(unserialize($items[$delta]['value']));
-  }
-  else {
-    // After the first table, we don't want to populate the values in the table
-    if ($delta > 0) {
-      tablefield_delete_table_values($instance['default_value'][0]['tablefield']);
-    }
+  // default table cell values
+  // they will eventually populate the #default_value form elements for cells
+  $default_value = NULL;
 
-    // Get the widget default value
-    $default_value = drupal_array_get_nested_value($form_state['input'], $tablefield_parents);
-    if (!empty($default_value)) {
-      // locked cells values do not end up in the input, so use instance defaults
-      if (!empty($field['settings']['lock_values'])) {
-        $default_value = tablefield_fill_locked_values($default_value, $instance['default_value'][0]['tablefield']);
-      }
+  // Establish what the default table cell values shall be
 
-      if (empty($default_value['rebuild'])) {
-        $default_value['rebuild'] = $default_size;
-      }
-      $default_value = tablefield_rationalize_table($default_value);
+  // if there's a triggering element get the values from form state
+  if (isset($form_state['triggering_element'])) {
+    if ($form_state['triggering_element']['#name'] == $rebuild_id) {
+      // Rebuilding table rows/cols
+      $default_value = drupal_array_get_nested_value($form_state['tablefield_rebuild'], $tablefield_parents);
+      drupal_set_message(t('Table structure rebuilt.'), 'status', FALSE);
+    }
+    elseif ($form_state['triggering_element']['#name'] == $import_id) {
+      // Importing CSV data
+      tablefield_import_csv($form, $form_state, $langcode, $import_id, $tablefield_parents);
+      $default_value = drupal_array_get_nested_value($form_state['input'], $tablefield_parents);
     }
     else {
-      $default_value = tablefield_rationalize_table($instance['default_value'][0]['tablefield']);
+      // the triggering element is neither a rebuild nor an import
+      // e.g. a file upload
+      $default_value = drupal_array_get_nested_value($form_state['input'], $tablefield_parents);
     }
   }
+
+  // if no values by now,
+  // get the tablefield item value stored in database, if any
+  if (!$default_value) {
+    // this could be set e.g. when using paragraphs module
+    if (isset($items[$delta]['tablefield'])) {
+      $default_value = $items[$delta]['tablefield'];
+    }
+    elseif (isset($items[$delta]['value'])) {
+      $default_value = unserialize($items[$delta]['value']);
+    }
+    // if still nothing, then get the instance default
+    // but only for delta 0
+    elseif ($delta === 0 && isset($instance['default_value'][0]['tablefield'])) {
+      $default_value = $instance['default_value'][0]['tablefield'];
+    }
+  }
+
+  if (empty($default_value['rebuild'])) {
+    $default_value['rebuild'] = $default_size;
+  }
+  else {
+    $default_size = $default_value['rebuild'];
+  }
+
+  $default_value = tablefield_rationalize_table($default_value);
+
+  $count_rows = $default_size['count_rows'];
+  $count_cols = $default_size['count_cols'];
+
+
+  // now we can build the widget
 
   if (!empty($instance['description'])) {
     $help_text = $instance['description'];
@@ -560,30 +570,6 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $arg0 = arg(0);
   if ($arg0 == 'admin') {
     $element['tablefield']['#description'] = t('This form defines the table field defaults, but the number of rows/columns and content can be overridden on a per-node basis. The first row will appear as the table header. Leave the first row blank if you do not need a header.');
-  }
-
-  // Determine how many rows/columns are saved in the data
-
-  // Override the number of rows/columns if the user rebuilds the form.
-  // $tablefield_rebuild variable was set above
-  if (isset($form_state['clicked_button']['#value']) && $form_state['clicked_button']['#name'] == $rebuild_id) {
-    $count_cols = $tablefield_rebuild['rebuild']['count_cols'];
-    $count_rows = $tablefield_rebuild['rebuild']['count_rows'];
-    drupal_set_message(t('Table structure rebuilt.'), 'status', FALSE);
-  }
-  else if (!empty($default_value)) {
-    $count_rows = count($default_value);
-    $count_cols = 0;
-    foreach ($default_value as $row) {
-      $temp_count = count($row);
-      if ($temp_count > $count_cols) {
-        $count_cols = $temp_count;
-      }
-    }
-  }
-  else {
-    $count_cols = $default_size['count_cols'];
-    $count_rows = $default_size['count_rows'];
   }
 
   // Render the form table
@@ -623,7 +609,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
             'class' => array('tablefield-row-' . $i, 'tablefield-col-' . $ii),
             'style' => 'width:100%'
           ),
-          '#default_value' => (empty($field_value)) ? $cell_default : $field_value,
+          '#default_value' => $cell_default,
           '#prefix' => '<td style="width:' . floor(100/$count_cols) . '%">',
           '#suffix' => '</td>',
         );
