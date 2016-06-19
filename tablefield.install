@@ -2,20 +2,8 @@
 
 /**
  * @file
- * Installation options for TableField
+ * Installation options for TableField.
  */
-
-/**
- * Implements hook_install().
- */
-function tablefield_install() {
-}
-
-/**
- * Implements hook_uninstall().
- */
-function tablefield_uninstall() {
-}
 
 /**
  * Implements hook_enable().
@@ -65,6 +53,9 @@ function tablefield_field_schema($field) {
   );
 }
 
+/**
+ * Helper function for updating/repairing the database schema.
+ */
 function tablefield_repair_schema() {
   $spec = array(
     'type' => 'varchar',
@@ -84,7 +75,7 @@ function tablefield_repair_schema() {
       $table = "field_data_{$field['field_name']}";
       $revision_table = "field_revision_{$field['field_name']}";
     }
-    $column = $field['field_name'] . '_' . 'format';
+    $column = $field['field_name'] . '_format';
     db_change_field($table, $column, $column, $spec);
     db_change_field($revision_table, $column, $column, $spec);
   }
@@ -98,19 +89,18 @@ function tablefield_update_7000() {
 }
 
 /**
- * Fix colums created by versions prior to beta1.
+ * Fix columns created by versions prior to beta1.
  */
 function tablefield_update_7001() {
   tablefield_repair_schema();
 }
-
 
 /**
  * Change default field_formatter name from 'default' to 'tablefield_default'.
  */
 function tablefield_update_7002() {
   $fields = field_read_fields(array('type' => 'tablefield'));
-  // tablefield enabled but no tablefields
+  // Tablefield enabled but no tablefields.
   if (!is_array($fields) || !count($fields)) {
     return;
   }
