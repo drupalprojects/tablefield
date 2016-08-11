@@ -21,6 +21,9 @@
 .form-tablefield input.tablefield-row-0 {
   font-weight: bold;
 }
+.table-no-headers input.tablefield-row-0 {
+  font-weight: normal!important;
+}
 .form-tablefield input {
   background-color: transparent !important;
 }

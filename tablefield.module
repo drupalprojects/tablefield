@@ -185,6 +185,11 @@ function tablefield_field_settings_form($field, $instance, $has_data) {
     '#title' => 'Lock table field defaults from further edits during node add/edit.',
     '#default_value' => isset($field['settings']['lock_values']) ? $field['settings']['lock_values'] : FALSE,
   );
+  $form['hide_headers'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Hide table header row.',
+    '#default_value' => isset($field['settings']['hide_headers']) ? $field['settings']['hide_headers'] : FALSE,
+  );
   $form['cell_processing'] = array(
     '#type' => 'radios',
     '#title' => t('Table cell processing'),
@@ -400,15 +405,16 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
         }
       }
 
-      // Pull the header for theming.
-      $header_data = array_shift($tabledata);
-
       // Check for an empty header, if so we don't want to theme it.
       $noheader = TRUE;
-      foreach ($header_data as $cell) {
-        if (strlen($cell['data']) > 0) {
-          $noheader = FALSE;
-          break;
+      if (empty($field['settings']['hide_headers'])) {
+
+        $header_data = array_shift($tabledata);
+        foreach ($header_data as $cell) {
+          if (strlen($cell['data']) > 0) {
+            $noheader = FALSE;
+            break;
+          }
         }
       }
 
@@ -542,7 +548,12 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     $help_text = $instance['description'];
   }
   else {
-    $help_text = t('The first row will appear as the table header. Leave the first row blank if you do not need a header.');
+    if (empty($field['settings']['hide_headers'])) {
+      $help_text = t('This table will not have a header.');
+    }
+    else {
+      $help_text = t('The first row will appear as the table header. Leave the first row blank if you do not need a header.');
+    }
   }
 
   $element['tablefield'] = array(
@@ -558,6 +569,9 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#prefix' => '<div id="' . $ajax_wrapper_id . '">',
     '#suffix' => '</div>',
   );
+  if (!empty($field['settings']['hide_headers'])) {
+    $element['tablefield']['#attributes']['class'][] = 'table-no-headers';
+  }
 
   // Give the fieldset the appropriate class if it is required.
   if ($element['#required']) {
@@ -568,7 +582,10 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
 
   $arg0 = arg(0);
   if ($arg0 == 'admin') {
-    $element['tablefield']['#description'] = t('This form defines the table field defaults, but the number of rows/columns and content can be overridden on a per-node basis. The first row will appear as the table header. Leave the first row blank if you do not need a header.');
+    $element['tablefield']['#description'] = t('This form defines the table field defaults, but the number of rows/columns and content can be overridden.');
+    if (!$field['settings']['hide_headers']) {
+      $element['tablefield']['#description'] .=  ' ' . t('The first row will appear as the table header. Leave the first row blank if you do not need a header.');
+    }
   }
 
   // Render the form table.
