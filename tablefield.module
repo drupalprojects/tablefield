@@ -493,6 +493,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $ajax_wrapper_id = "$id-wrapper";
   $rebuild_id = "$id-rebuild";
   $import_id = "$id-import";
+  $pasted_id = "$id-pasted";
 
   // Default table size.
   $default_size['count_cols'] = isset($instance['default_value'][0]['tablefield']['rebuild']['count_cols']) ? $instance['default_value'][0]['tablefield']['rebuild']['count_cols'] : 5;
@@ -514,6 +515,14 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
       // Importing CSV data.
       tablefield_import_csv($form, $form_state, $langcode, $import_id, $tablefield_parents);
       $default_value = drupal_array_get_nested_value($form_state['input'], $tablefield_parents);
+    }
+    elseif ($form_state['triggering_element']['#name'] == $pasted_id) {
+      // Importing pasted data
+      tablefield_import_pasted($form, $form_state, $langcode, $pasted_id, $tablefield_parents);
+      $default_value = drupal_array_get_nested_value($form_state['input'], $tablefield_parents);
+      if (empty($default_value['rebuild'])) {
+        $default_value['rebuild'] = $default_size;
+      }
     }
     else {
       // The triggering element is neither a rebuild nor an import
@@ -726,7 +735,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $element['tablefield']['import'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#title' => t('Import from CSV'),
+    '#title' => t('Upload CSV file'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
@@ -746,6 +755,52 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#attributes' => array(
       'class' => array('tablefield-rebuild'),
     ),
+    '#ajax' => array(
+      'callback' => 'tablefield_rebuild_form_ajax',
+      'wrapper' => $ajax_wrapper_id,
+      'effect' => 'fade',
+    ),
+  );
+
+  // Allow user to paste data (e.g. from Excel)
+  $element['tablefield']['paste'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Copy & Paste'),
+    '#attributes' => array('class' => array('tablefield-extra tablefield-paste')),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $delimiters = array(
+    'TAB' => 'TAB',
+    ',' => 'Comma ,',
+    ';' => 'Semicolon ;',
+    '|' => 'Pipe |',
+    '+' => 'Plus +',
+    ':' => 'Colon :',
+  );
+  $element['tablefield']['paste']['paste_delimiter'] = array(
+    '#type' => 'select',
+    '#tree' => TRUE,
+    '#title' => t('Column separator'),
+    '#name' => 'delimiter[' . $pasted_id . ']',
+    '#options' => $delimiters,
+    '#description' => t('Data copied from Excel will use TAB.'),
+  );
+  $element['tablefield']['paste']['data'] = array(
+    '#type' => 'textarea',
+    '#tree' => TRUE,
+    '#name' => 'data[' . $pasted_id . ']',
+    '#title' => t('Paste table data here:'),
+  );
+  $element['tablefield']['paste']['paste_import'] = array(
+    '#type' => 'button',
+    '#validate' => array(),
+    '#limit_validation_errors' => array(),
+    '#executes_submit_callback' => TRUE,
+    '#submit' => array('tablefield_rebuild_form'),
+    '#value' => t('Import & Rebuild'),
+    '#name' => $pasted_id,
     '#ajax' => array(
       'callback' => 'tablefield_rebuild_form_ajax',
       'wrapper' => $ajax_wrapper_id,
@@ -815,6 +870,57 @@ function tablefield_import_csv($form, &$form_state, $langcode, $file_form_field_
     else {
       drupal_set_message(t('There was a problem importing @file.', array('@file' => $file->filename)));
     }
+  }
+}
+
+/**
+ * Helper function to import pasted data
+ * @param array $form
+ * @param array $form_state
+ * @param string $langcode
+ * @param string $file_form_field_name
+ * @param array $tablefield_parents
+ */
+function tablefield_import_pasted($form, &$form_state, $langcode, $pasted_form_field_name, $tablefield_parents) {
+  $data = $form_state['input']['data'][$pasted_form_field_name];
+  if (!empty($data)) {
+    // Empty the current table.
+    tablefield_delete_table_values(drupal_array_get_nested_value($form_state['values'], $tablefield_parents));
+    tablefield_delete_table_values(drupal_array_get_nested_value($form_state['input'], $tablefield_parents));
+
+    // Get the delimiter.
+    $col_delimiter = $form_state['input']['delimiter'][$pasted_form_field_name];
+    if ($col_delimiter == 'TAB') {
+      $col_delimiter = "\t";
+    }
+
+    // Populate table with pasted values.
+    $max_col_count = 0;
+    $row_count = 0;
+    $imported_tablefield = array();
+    $rows = explode(PHP_EOL, $data);
+    foreach ($rows as $row_id => $row) {
+      // Explode the current row into columns:
+      $cols = explode($col_delimiter, $row);
+      $col_count = count($cols);
+      if ($col_count > 0) {
+        foreach ($cols as $col_id => $col) {
+          $imported_tablefield['cell_' . $row_count . '_' . $col_id] = $col;
+        }
+        $max_col_count = $col_count > $max_col_count ? $col_count : $max_col_count;
+        $row_count++;
+      }
+    }
+
+    // Rebuild the table if necessary, and save.
+    $imported_tablefield['rebuild'] = array('count_cols' => $max_col_count, 'count_rows' => $row_count);
+    drupal_array_set_nested_value($form_state['values'], $tablefield_parents, $imported_tablefield);
+    drupal_array_set_nested_value($form_state['input'], $tablefield_parents, $imported_tablefield);
+
+    drupal_set_message(t('Successfully imported pasted data.'));
+  }
+  else {
+    drupal_set_message(t('There was a problem importing pasted data.'));
   }
 }
 
@@ -894,11 +1000,12 @@ function tablefield_rationalize_table($tablefield) {
     unset($tablefield['caption']);
     unset($tablefield['rebuild']);
     unset($tablefield['import']);
+    unset($tablefield['paste']);
 
     foreach ($tablefield as $key => $value) {
       if (preg_match('/cell_(.*)_(.*)/', $key, $cell)) {
         // $cell[1] is row count $cell[2] is col count.
-        if ((int) $cell[1] < $count_rows && (int) $cell['2'] < $count_cols) {
+        if ((int) $cell[1] < $count_rows && (int) $cell[2] < $count_cols) {
           $tabledata[$cell[1]][$cell[2]] = $value;
         }
       }
