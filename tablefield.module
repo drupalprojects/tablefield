@@ -424,18 +424,23 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
       $entity_id = !empty($entity_info['entity keys']['id']) ? $entity->{$entity_info['entity keys']['id']} : NULL;
 
       // Theme the table for display.
-      $element[$delta]['#markup'] = theme('tablefield_view', array(
-        'caption' => $caption,
-        'header' => $header,
-        'rows' => $tabledata,
-        'delta' => $delta,
-        'export' => isset($field['settings']['export']) ? $field['settings']['export'] : NULL,
-        'entity_type' => $entity_type,
-        'entity_id' => $entity_id,
-        'field_name' => $field['field_name'],
-        'langcode' => $langcode,
-        'formatter' => $formatter,
-      ));
+      $element[$delta] = array(
+        '#theme' => 'tablefield_view',
+        '#attributes' => array(
+          'id' => 'tablefield-' . $delta,
+          'class' => array('tablefield'),
+        ),
+        '#caption' => $caption,
+        '#header' => $header,
+        '#rows' => $tabledata,
+        '#delta' => $delta,
+        '#export' => isset($field['settings']['export']) ? $field['settings']['export'] : NULL,
+        '#entity_type' => $entity_type,
+        '#entity_id' => $entity_id,
+        '#field_name' => $field['field_name'],
+        '#langcode' => $langcode,
+        '#formatter' => $formatter,
+      );
     }
 
   }
@@ -887,10 +892,11 @@ function tablefield_rationalize_table($tablefield) {
     unset($tablefield['import']);
 
     foreach ($tablefield as $key => $value) {
-      preg_match('/cell_(.*)_(.*)/', $key, $cell);
-      // $cell[1] is row count $cell[2] is col count.
-      if ((int) $cell[1] < $count_rows && (int) $cell[2] < $count_cols) {
-        $tabledata[$cell[1]][$cell[2]] = $value;
+      if (preg_match('/cell_(.*)_(.*)/', $key, $cell)) {
+        // $cell[1] is row count $cell[2] is col count.
+        if ((int) $cell[1] < $count_rows && (int) $cell['2'] < $count_cols) {
+          $tabledata[$cell[1]][$cell[2]] = $value;
+        }
       }
     }
   }
@@ -927,9 +933,7 @@ function tablefield_theme() {
 function theme_tablefield_view($variables) {
   $attributes = $variables['attributes'] + array(
     'id' => 'tablefield-' . $variables['delta'],
-    'class' => array(
-      'tablefield',
-    ),
+    'class' => array('tablefield'),
   );
 
   // Apply scope property to headers for accessibility.
