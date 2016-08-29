@@ -289,6 +289,7 @@ function tablefield_field_is_empty($item, $field) {
   }
 
   // Remove the preference fields to see if the table cells are all empty.
+  unset($item['tablefield']['caption']);
   unset($item['tablefield']['rebuild']);
   unset($item['tablefield']['import']);
   if (!empty($item['tablefield'])) {
@@ -363,6 +364,9 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
   $formatter = $display['type'];
 
   foreach ($items as $delta => $table) {
+    // Check for table caption.
+    $raw = unserialize($table['value']);
+    $caption = isset($raw['caption'])? check_plain($raw['caption']): '';
 
     // Rationalize the stored data.
     if (!empty($table['tabledata'])) {
@@ -421,6 +425,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
 
       // Theme the table for display.
       $element[$delta]['#markup'] = theme('tablefield_view', array(
+        'caption' => $caption,
         'header' => $header,
         'rows' => $tabledata,
         'delta' => $delta,
@@ -635,6 +640,20 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#markup' => '</table>',
   );
 
+  // Provide caption field to describe the data contained in the table.
+  $element['tablefield']['caption'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Table description'),
+    '#default_value' => '',
+    '#description' => t('This brief caption will be associated with the table and will help Assitive Technology, like screen readers, better describe the content within.'),
+  );
+  if (isset($items[$delta]['value'])) {
+    $raw = unserialize($items[$delta]['value']);
+    if (isset($raw['caption'])) {
+      $element['tablefield']['caption']['#default_value'] = check_plain($raw['caption']);
+    }
+  }
+
   // If the user doesn't have rebuild perms, we pass along the data as a value.
   // Otherwise we provide form elements to specify the size and ajax rebuild.
   if (isset($field['settings']['restrict_rebuild']) && $field['settings']['restrict_rebuild'] && !user_access('rebuild tablefield')) {
@@ -711,7 +730,6 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#title' => t('File upload'),
     '#type' => 'file',
   );
-
   $element['tablefield']['import']['import'] = array(
     '#type' => 'button',
     '#validate' => array(),
@@ -864,6 +882,7 @@ function tablefield_rationalize_table($tablefield) {
     // Remove exterraneous form data.
     $count_cols = $tablefield['rebuild']['count_cols'];
     $count_rows = $tablefield['rebuild']['count_rows'];
+    unset($tablefield['caption']);
     unset($tablefield['rebuild']);
     unset($tablefield['import']);
 
@@ -886,10 +905,11 @@ function tablefield_theme() {
   return array(
     'tablefield_view' => array(
       'variables' => array(
+        'caption' => NULL,
         'header' => NULL,
         'rows' => NULL,
-        'delta' => NULL,
         'export' => NULL,
+        'delta' => NULL,
         'entity_type' => NULL,
         'entity_id' => NULL,
         'field_name' => NULL,
@@ -912,6 +932,13 @@ function theme_tablefield_view($variables) {
     ),
   );
 
+  // Apply scope property to headers for accessibility.
+  if (is_array($variables['header'])) {
+    foreach ($variables['header'] as &$header) {
+      $header['scope'] = 'col';
+    }
+  }
+
   // If the user has access to the csv export option, display it now.
   $export = '';
   if ($variables['export'] && user_access('export tablefield')) {
@@ -919,14 +946,18 @@ function theme_tablefield_view($variables) {
     $export = '<div id="tablefield-export-link-' . $variables['delta'] . '" class="tablefield-export-link">' . l(t('Export Table Data'), $url) . '</div>';
   }
 
+  // Prepare variables for theme_table().
+  $theme_variables = array(
+    'header' => $variables['header'],
+    'rows' => $variables['rows'],
+    'attributes' => $attributes,
+  );
+  if ($variables['caption']) {
+    $theme_variables['caption'] = $variables['caption'];
+  }
+
   return '<div id="tablefield-wrapper-' . $variables['delta'] . '" class="tablefield-wrapper">'
-    . theme('table__tablefield',
-      array(
-        'header' => $variables['header'],
-        'rows' => $variables['rows'],
-        'attributes' => $attributes,
-      )
-    )
+    . theme('table__tablefield', $theme_variables)
     . $export
     . '</div>';
 }
