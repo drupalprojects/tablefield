@@ -222,9 +222,48 @@ function tablefield_field_presave($entity_type, $entity, $field, $instance, $lan
     if (empty($table['value'])) {
       $tablefield = array();
       if (!empty($table['tablefield'])) {
+        $rows_max = $table['tablefield']['rebuild']['count_rows'];
+        $cols_max = $table['tablefield']['rebuild']['count_cols'];
+        $count_rows = 0;
+        $count_cols = 0;
+
+        // Build an array we can sort by weight out of the data.
+        $meta = array();
+        $tablified_data = array();
         foreach ($table['tablefield'] as $key => $value) {
-          $tablefield[$key] = $value;
+          if (substr($key, 0, 5) !== 'cell_') {
+            // Save these for later.
+            $meta[$key] = $value;
+          }
+          else {
+            if (strstr($key, '_weight')) {
+              // Use this for sorting, call it's key "weight".
+              $tablified_data[$count_rows]['weight'] = $value;
+            }
+            else {
+              if ($count_cols == $cols_max) {
+                $count_rows++;
+                $count_cols = 0;
+              }
+              $tablified_data[$count_rows]['data'][$count_cols] = $value;
+              $count_cols++;
+            }
+          }
         }
+        // Sort!
+        uasort($tablified_data, 'drupal_sort_weight');
+
+        // Put the data in the desired order before saving.
+        $row_counter = $col_counter = 0;
+        foreach ($tablified_data as $row) {
+          foreach ($row['data'] as $cell) {
+            $tablefield['cell_' . $row_counter . '_' . $col_counter] = $cell;
+            $col_counter++;
+          }
+          $row_counter++;
+          $col_counter = 0;
+        }
+        $tablefield = array_merge($tablefield, $meta);
       }
       $items[$delta]['value'] = serialize($tablefield);
     }
@@ -500,10 +539,8 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $default_size['count_rows'] = isset($instance['default_value'][0]['tablefield']['rebuild']['count_rows']) ? $instance['default_value'][0]['tablefield']['rebuild']['count_rows'] : 5;
 
   // Default table cell values.
-  // They will eventually populate the #default_value form elements for cells.
   $default_value = NULL;
 
-  // Establish what the default table cell values shall be.
   // If there's a triggering element get the values from form state.
   if (isset($form_state['triggering_element'])) {
     if ($form_state['triggering_element']['#name'] == $rebuild_id) {
@@ -552,7 +589,6 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   else {
     $default_size = $default_value['rebuild'];
   }
-
   $default_value = tablefield_rationalize_table($default_value);
 
   $count_rows = $default_size['count_rows'];
@@ -605,13 +641,15 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
 
   // Render the form table.
   $element['tablefield']['a_break'] = array(
-    '#markup' => '<table>',
+    '#markup' => '<table id="tablefield-editor">',
   );
+
   for ($i = 0; $i < $count_rows; $i++) {
     $zebra = $i % 2 == 0 ? 'even' : 'odd';
     $element['tablefield']['b_break' . $i] = array(
-      '#markup' => '<tr class="tablefield-row-' . $i . ' ' . $zebra . '">',
+      '#markup' => '<tr class="draggable tablefield-row-' . $i . ' ' . $zebra . '">',
     );
+
     for ($ii = 0; $ii < $count_cols; $ii++) {
       $instance_default = array();
       if (isset($instance['default_value'][0]['tablefield']["cell_{$i}_{$ii}"])) {
@@ -628,7 +666,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
         $element['tablefield']['cell_' . $i . '_' . $ii . '_display'] = array(
           '#type' => 'item',
           '#title' => $instance_default,
-          '#prefix' => '<td style="width:' . floor(100 / $count_cols) . '%">',
+          '#prefix' => '<td>',
           '#suffix' => '</td>',
         );
       }
@@ -641,14 +679,27 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
           '#attributes' => array(
             'id' => $id . '-cell-' . $i . '-' . $ii,
             'class' => array('tablefield-row-' . $i, 'tablefield-col-' . $ii),
-            'style' => 'width:100%',
+            'style' => 'min-width:100%',
           ),
           '#default_value' => $cell_default,
-          '#prefix' => '<td style="width:' . floor(100 / $count_cols) . '%">',
+          '#prefix' => '<td>',
           '#suffix' => '</td>',
         );
       }
     }
+
+    // Add an extra column for the weight.
+    $row_weight_default = isset($default_value[$i]['weight']) ? $default_value[$i]['weight'] : '';
+    $element['tablefield']['cell_' . $i . '_weight'] = array(
+      '#type' => 'weight',
+      '#title' => t('Weight'),
+      '#default_value' => $row_weight_default,
+      '#delta' => 10,
+      '#attributes' => array('class' => array('tablefield-weight')),
+      '#prefix' => '<td class="tabledrag-hide">',
+      '#suffix' => '</td>',
+    );
+
     $element['tablefield']['c_break' . $i] = array(
       '#markup' => '<td class="tablefield-row-count">' . ($i+1) . '</td></tr>',
     );
@@ -656,6 +707,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $element['tablefield']['t_break' . $i] = array(
     '#markup' => '</table>',
   );
+  drupal_add_tabledrag('tablefield-editor', 'order', 'sibling', 'tablefield-weight');
 
   // Provide caption field to describe the data contained in the table.
   $element['tablefield']['caption'] = array(
