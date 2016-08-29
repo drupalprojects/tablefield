@@ -12,7 +12,7 @@
 .form-tablefield table tr td.tablefield-row-count {
   color: #cccccc;
   vertical-align: middle;
-  padding-right: 3px;
+  max-width: 20px;
 }
 .field-widget-tablefield .draggable a.tabledrag-handle {
   margin-left: 0;
