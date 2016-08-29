@@ -785,6 +785,9 @@ function tablefield_import_csv($form, &$form_state, $langcode, $file_form_field_
   $file = file_save_upload($file_form_field_name, array('file_validate_extensions' => array('csv')));
 
   if (is_object($file)) {
+    // Assure Mac/Linux EOL markers work with fgetcsv().
+    $auto_detect_line_endings = ini_get('auto_detect_line_endings');
+    ini_set('auto_detect_line_endings', TRUE);
     if (($handle = fopen($file->uri, "r")) !== FALSE) {
       tablefield_delete_table_values(drupal_array_get_nested_value($form_state['values'], $tablefield_parents));
       tablefield_delete_table_values(drupal_array_get_nested_value($form_state['input'], $tablefield_parents));
@@ -802,6 +805,7 @@ function tablefield_import_csv($form, &$form_state, $langcode, $file_form_field_
         $row_count++;
       }
       fclose($handle);
+      ini_set('auto_detect_line_endings', $auto_detect_line_endings);
       $imported_tablefield['rebuild'] = array('count_cols' => $max_col_count, 'count_rows' => $row_count);
       drupal_array_set_nested_value($form_state['values'], $tablefield_parents, $imported_tablefield);
       drupal_array_set_nested_value($form_state['input'], $tablefield_parents, $imported_tablefield);
