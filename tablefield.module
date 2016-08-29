@@ -179,7 +179,7 @@ function tablefield_field_settings_form($field, $instance, $has_data) {
   );
   $form['lock_values'] = array(
     '#type' => 'checkbox',
-    '#title' => 'Lock table field defaults from further edits during node add/edit.',
+    '#title' => 'Lock table header so default values cannot be changed.',
     '#default_value' => isset($field['settings']['lock_values']) ? $field['settings']['lock_values'] : FALSE,
   );
   $form['hide_headers'] = array(
@@ -554,7 +554,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     $help_text = $instance['description'];
   }
   else {
-    if (empty($field['settings']['hide_headers'])) {
+    if ($field['settings']['hide_headers'] == TRUE) {
       $help_text = t('This table will not have a header.');
     }
     else {
