@@ -1,8 +1,5 @@
 name = TableField
-description = Defines a generic tabular data field.
+description = Defines a tabular data field.
 core = 7.x
 package = Fields
 dependencies[] = field
-files[] = tablefield.css
-files[] = tablefield.module
-files[] = tablefield.install
