@@ -261,10 +261,10 @@ function tablefield_field_widget_error($element, $error, $form, &$form_state) {
  * Implements hook_field_load().
  */
 function tablefield_field_load($entity_type, $entities, $field, $instances, $langcode, &$items, $age) {
-  foreach ($entities as $id => $entity) {
-    foreach ($items[$id] as $delta => $item) {
-      if (isset($item['value'])) {
-        $items[$id][$delta]['tabledata'] = tablefield_rationalize_table(unserialize($item['value']));
+  foreach ($items as $delta => $table) {
+    foreach ($table as $id => $field){
+      if (isset($field['value'])) {
+        $items[$delta][$id]['tabledata'] = tablefield_rationalize_table(unserialize($field['value']));
       }
     }
   }
