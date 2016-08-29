@@ -1,10 +1,7 @@
 <?php
-
 /**
  * @file
  * Provides a set of fields that can be used to store tabular data with a node.
- *
- * The implementation uses a custom CCK widget.
  *
  * @todo Should we create a helper function for sanitization?
  *   - We should see if it makes sense to sanitize on load as well as view.
@@ -408,7 +405,6 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
       // Check for an empty header, if so we don't want to theme it.
       $noheader = TRUE;
       if (empty($field['settings']['hide_headers'])) {
-
         $header_data = array_shift($tabledata);
         foreach ($header_data as $cell) {
           if (strlen($cell['data']) > 0) {
