@@ -18,6 +18,9 @@
   padding: 0 0 0 0;
   text-align: center;
 }
+.form-tablefield table tr td.tablefield-row-count {
+  color: #cccccc;
+}
 .form-tablefield input.tablefield-row-0 {
   font-weight: bold;
 }

@@ -610,7 +610,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   for ($i = 0; $i < $count_rows; $i++) {
     $zebra = $i % 2 == 0 ? 'even' : 'odd';
     $element['tablefield']['b_break' . $i] = array(
-      '#markup' => '<tr class="tablefield-row-' . $i . ' ' . $zebra . '">',
+      '#markup' => '<tr class="tablefield-row-' . $i . ' ' . $zebra . '"><td class="tablefield-row-count">' . ($i+1) . '</td>',
     );
     for ($ii = 0; $ii < $count_cols; $ii++) {
       $instance_default = array();
