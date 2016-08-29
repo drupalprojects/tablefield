@@ -20,6 +20,8 @@
 }
 .form-tablefield table tr td.tablefield-row-count {
   color: #cccccc;
+  vertical-align: middle;
+  padding-right: 3px;
 }
 .form-tablefield input.tablefield-row-0 {
   font-weight: bold;
