@@ -208,9 +208,10 @@ function tablefield_field_settings_form($field, $instance, $has_data) {
  * Implements hook_field_prepare_view().
  */
 function tablefield_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
+  $instance = reset($instances); // This isn't used, hack here is okay.
   foreach ($entities as $id => $entity) {
     $entity_items = &$items[$id];
-    tablefield_field_presave($entity_type, $entity, $field, $instances, $langcode, $entity_items);
+    tablefield_field_presave($entity_type, $entity, $field, $instance, $langcode, $entity_items);
   }
 }
 
@@ -237,7 +238,7 @@ function tablefield_field_presave($entity_type, $entity, $field, $instance, $lan
           }
           else {
             if (strstr($key, '_weight')) {
-              // Use this for sorting, call it's key "weight".
+              // To use this for sorting, we call it's key "weight".
               $tablified_data[$count_rows]['weight'] = $value;
             }
             else {
@@ -250,7 +251,8 @@ function tablefield_field_presave($entity_type, $entity, $field, $instance, $lan
             }
           }
         }
-        // Sort!
+
+        // Sort by weight.
         uasort($tablified_data, 'drupal_sort_weight');
 
         // Put the data in the desired order before saving.
@@ -263,6 +265,8 @@ function tablefield_field_presave($entity_type, $entity, $field, $instance, $lan
           $row_counter++;
           $col_counter = 0;
         }
+
+        // Add the non-value data back in before we save.
         $tablefield = array_merge($tablefield, $meta);
       }
       $items[$delta]['value'] = serialize($tablefield);
@@ -278,7 +282,6 @@ function tablefield_field_presave($entity_type, $entity, $field, $instance, $lan
  * Implements hook_field_validate().
  */
 function tablefield_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
-  drupal_add_css(drupal_get_path('module', 'tablefield') . '/tablefield.css');
   // Catch empty form submissions for required tablefields.
   if ($instance['required'] && isset($items[0]) && tablefield_field_is_empty($items[0], $field)) {
     $message = t('@field is a required field.', array('@field' => $instance['label']));
@@ -644,12 +647,14 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#markup' => '<table id="tablefield-editor">',
   );
 
+  // Loop over all the rows.
   for ($i = 0; $i < $count_rows; $i++) {
     $zebra = $i % 2 == 0 ? 'even' : 'odd';
     $element['tablefield']['b_break' . $i] = array(
       '#markup' => '<tr class="draggable tablefield-row-' . $i . ' ' . $zebra . '"><td class="tablefield-row-count">' . ($i+1) . '</td>',
     );
 
+    // Loop over all the columns.
     for ($ii = 0; $ii < $count_cols; $ii++) {
       $instance_default = array();
       if (isset($instance['default_value'][0]['tablefield']["cell_{$i}_{$ii}"])) {
@@ -689,12 +694,12 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     }
 
     // Add an extra column for the weight.
-    $row_weight_default = isset($default_value[$i]['weight']) ? $default_value[$i]['weight'] : '';
+    $row_weight_default = isset($default_value[$i]['weight']) ? $default_value[$i]['weight'] : ($i+1);
     $element['tablefield']['cell_' . $i . '_weight'] = array(
       '#type' => 'weight',
       '#title' => t('Weight'),
       '#default_value' => $row_weight_default,
-      '#delta' => 10,
+      '#delta' => $count_rows,
       '#attributes' => array('class' => array('tablefield-weight')),
       '#prefix' => '<td class="tabledrag-hide">',
       '#suffix' => '</td>',
@@ -704,6 +709,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
       '#markup' => '</tr>',
     );
   }
+
   $element['tablefield']['t_break' . $i] = array(
     '#markup' => '</table>',
   );
@@ -1099,7 +1105,7 @@ function tablefield_theme() {
 function theme_tablefield_view($variables) {
   $attributes = $variables['attributes'] + array(
     'id' => 'tablefield-' . $variables['delta'],
-    'class' => array('tablefield'),
+    'class' => array('tablefield', 'tablefield-' . $variables['delta']),
   );
 
   // Apply scope property to headers for accessibility.
