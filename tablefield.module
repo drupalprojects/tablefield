@@ -972,7 +972,7 @@ function tablefield_import_pasted($form, &$form_state, $langcode, $pasted_form_f
       $col_count = count($cols);
       if ($col_count > 0) {
         foreach ($cols as $col_id => $col) {
-          $imported_tablefield['cell_' . $row_count . '_' . $col_id] = $col;
+          $imported_tablefield['row_' . $row_count]['col_' . $col_id] = $col;
         }
         $max_col_count = $col_count > $max_col_count ? $col_count : $max_col_count;
         $row_count++;
