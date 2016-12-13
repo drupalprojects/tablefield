@@ -316,14 +316,21 @@ function tablefield_field_is_empty($item, $field) {
     return FALSE;
   }
 
+  $count_rows = $item['tablefield']['rebuild']['count_rows'];
   // Remove the preference fields to see if the table cells are all empty.
   unset($item['tablefield']['caption']);
   unset($item['tablefield']['rebuild']);
   unset($item['tablefield']['import']);
-  if (!empty($item['tablefield'])) {
-    foreach ($item['tablefield'] as $cell) {
-      if (!empty($cell)) {
-        return FALSE;
+  unset($item['tablefield']['paste']);
+  if (!empty($item['tablefield']['tabledata'])) {
+
+    for ($i = 0; $i < $count_rows; $i++) {
+      foreach ($item['tablefield']['tabledata']["row_{$i}"] as $key => $cell) {
+        // Keys denoting weight data and anything still iterateable should be
+        // ignored while checking for empty cell data.
+        if (strpos($key, 'weight') === FALSE && !is_array($cell) && !empty($cell)) {
+          return FALSE;
+        }
       }
     }
   }
