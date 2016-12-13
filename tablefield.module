@@ -898,6 +898,18 @@ function tablefield_import_csv($form, &$form_state, $langcode, $file_form_field_
       tablefield_delete_table_values(drupal_array_get_nested_value($form_state['values'], $tablefield_parents));
       tablefield_delete_table_values(drupal_array_get_nested_value($form_state['input'], $tablefield_parents));
 
+      // Checking the encoding of the CSV file to be UTF-8.
+      $encoding = 'UTF-8';
+      if (function_exists('mb_detect_encoding')) {
+        $file_contents = file_get_contents($file->uri);
+        $encodings_list = implode(',', variable_get('tablefield_detect_encodings', array(
+          'UTF-8',
+          'ISO-8859-1',
+          'WINDOWS-1251',
+        )));
+        $encoding = mb_detect_encoding($file_contents, $encodings_list);
+      }
+
       // Populate CSV values.
       $max_col_count = 0;
       $row_count = 0;
@@ -905,7 +917,7 @@ function tablefield_import_csv($form, &$form_state, $langcode, $file_form_field_
       while (($csv = fgetcsv($handle, 0, variable_get('tablefield_csv_separator', ','))) !== FALSE) {
         $col_count = count($csv);
         foreach ($csv as $col_id => $col) {
-          $imported_tablefield['row_' . $row_count]['col_' . $col_id] = $col;
+          $imported_tablefield['row_' . $row_count]['col_' . $col_id] = tablefield_convert_encoding($col, $encoding);
         }
         $max_col_count = $col_count > $max_col_count ? $col_count : $max_col_count;
         $row_count++;
@@ -1097,6 +1109,32 @@ function theme_tablefield_view($variables) {
     . theme('table__tablefield', $theme_variables)
     . $export
     . '</div>';
+}
+
+/**
+ * Helper function to detect and convert strings not in UTF-8 to UTF-8.
+ *
+ * @param string $data
+ *   The string which needs converting.
+ * @param string $encoding
+ *   The encoding of the CSV file.
+ *
+ * @return string
+ *   UTF encoded string.
+ */
+function tablefield_convert_encoding($data, $encoding) {
+  // Converting UTF-8 to UTF-8 will not work.
+  if ($encoding == 'UTF-8') {
+    return $data;
+  }
+
+  // Try convert the data to UTF-8.
+  if ($encoded_data = drupal_convert_to_utf8($data, $encoding)) {
+    return $encoded_data;
+  }
+
+  // Fallback on the input data.
+  return $data;
 }
 
 /**
