@@ -21,8 +21,8 @@ function tablefield_menu() {
     'admin/config/content/tablefield' => array(
       'page callback' => 'drupal_get_form',
       'page arguments' => array('tablefield_admin_settings_form'),
-      'title' => 'tablefield',
-      'description' => 'Global configuration for the tablefield module',
+      'title' => 'Tablefield',
+      'description' => 'Global configuration for the Tablefield module.',
       'access arguments' => array('configure tablefield'),
     ),
   );
@@ -1181,6 +1181,7 @@ function tablefield_rtrim_rows($tabledata) {
   $row_num = count($tabledata);
 
   foreach ($tabledata as $key => $value) {
+    array_pop($value);
     $empty = TRUE;
     if (is_array($value)) {
 
