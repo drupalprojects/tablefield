@@ -447,11 +447,11 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
       unset($tabledata['rebuild']);
       unset($tabledata['import']);
       unset($tabledata['paste']);
-      $header_data = $tabledata['row_0'];
+      $header_data = isset($tabledata['row_0']) ? $tabledata['row_0'] : NULL;
 
       // Check for an empty header, if so we don't want to theme it.
       $noheader = TRUE;
-      if (empty($field['settings']['hide_headers'])) {
+      if (empty($field['settings']['hide_headers']) && $header_data) {
         foreach ($header_data as $cell) {
           if (strlen($cell['data']) > 0) {
             $noheader = FALSE;
