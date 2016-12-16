@@ -236,8 +236,8 @@ function tablefield_field_presave($entity_type, $entity, $field, $instance, $lan
         // Put the data in the desired order before saving.
         $row_counter = $col_counter = 0;
         foreach ($table['tablefield']['tabledata'] as $row) {
-          foreach ($row as $cell) {
-            if ($cell === end($row)) {
+          foreach ($row as $key => $cell) {
+            if ($key === 'weight') {
               $tablefield['tablefield']['tabledata']['row_' . $row_counter]['weight'] = $cell;
             }
             else {
@@ -646,6 +646,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#markup' => '<table id="tablefield-editor">',
   );
 
+  $default_value = isset($default_value['tabledata']) ? $default_value['tabledata'] : $default_value;
   // Loop over all the rows.
   for ($i = 0; $i < $count_rows; $i++) {
     $zebra = $i % 2 == 0 ? 'even' : 'odd';
@@ -672,7 +673,6 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
         );
       }
       else {
-        $default_value = isset($default_value['tabledata']) ? $default_value['tabledata'] : $default_value;
         $cell_default = isset($default_value['row_' . $i]['col_' . $ii]) ? $default_value['row_' . $i]['col_' . $ii] : '';
         $element['tablefield']['tabledata']['row_' . $i]['col_' . $ii] = array(
           '#type' => 'textfield',
