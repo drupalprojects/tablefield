@@ -510,8 +510,7 @@ function tablefield_field_widget_info() {
  * Implements hook_widget_form().
  */
 function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-  drupal_add_css(drupal_get_path('module', 'tablefield') . '/tablefield.css');
-
+  $form['#after_build'][] = 'tablefield_after_build';
   $element['#type'] = 'tablefield';
   $form['#attributes']['enctype'] = 'multipart/form-data';
 
@@ -710,7 +709,6 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $element['tablefield']['t_break' . $i] = array(
     '#markup' => '</table>',
   );
-  drupal_add_tabledrag('tablefield-editor', 'order', 'sibling', 'tablefield-weight');
 
   // Provide caption field to describe the data contained in the table.
   $element['tablefield']['caption'] = array(
@@ -877,6 +875,15 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   }
 
   return $element;
+}
+
+/**
+ * Form #after_build callback for tablefield_field_widget_form().
+ */
+function tablefield_after_build($form, &$form_state) {
+  drupal_add_css(drupal_get_path('module', 'tablefield') . '/tablefield.css');
+  drupal_add_tabledrag('tablefield-editor', 'order', 'sibling', 'tablefield-weight');
+  return $form;
 }
 
 /**
