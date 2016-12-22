@@ -188,6 +188,11 @@ function tablefield_field_settings_form($field, $instance, $has_data) {
     '#title' => 'Hide table header row.',
     '#default_value' => isset($field['settings']['hide_headers']) ? $field['settings']['hide_headers'] : FALSE,
   );
+  $form['sticky'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Sticky header.',
+    '#default_value' => isset($field['settings']['sticky']) ? $field['settings']['sticky'] : TRUE,
+  );
   $form['cell_processing'] = array(
     '#type' => 'radios',
     '#title' => t('Table cell processing'),
@@ -474,6 +479,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
           'class' => array('tablefield'),
         ),
         '#caption' => $caption,
+        '#sticky' => isset($field['settings']['sticky']) ? $field['settings']['sticky'] : NULL,
         '#header' => $header,
         '#rows' => $tabledata,
         '#delta' => $delta,
@@ -1081,6 +1087,7 @@ function tablefield_theme() {
         'field_name' => NULL,
         'langcode' => NULL,
         'formatter' => NULL,
+        'sticky' => NULL,
         'attributes' => array(),
       ),
     ),
@@ -1118,6 +1125,9 @@ function theme_tablefield_view($variables) {
   );
   if (isset($variables['caption'])) {
     $theme_variables['caption'] = $variables['caption'];
+  }
+  if (isset($variables['sticky'])) {
+    $theme_variables['sticky'] = $variables['sticky'];
   }
   return '<div id="' . drupal_html_id('tablefield-wrapper-' . $variables['delta']) . '" class="tablefield-wrapper">'
     . theme('table__tablefield', $theme_variables)
