@@ -260,7 +260,7 @@ function tablefield_field_presave($entity_type, $entity, $field, $instance, $lan
         // Add the non-value data back in before we save.
         $tablefield = array_merge($tablefield, $table);
       }
-      $items[$delta]['value'] = serialize($tablefield['tablefield']);
+      $items[$delta]['value'] = isset($tablefield['tablefield']) ? serialize($tablefield['tablefield']) : '';
     }
     elseif (empty($table['tablefield'])) {
       // Batch processing only provides the 'value'.
