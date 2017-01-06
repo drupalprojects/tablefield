@@ -981,7 +981,7 @@ function tablefield_import_pasted($form, &$form_state, $langcode, $pasted_form_f
     $row_count = 0;
     $imported_tablefield = array();
     $rows = explode(PHP_EOL, $data);
-    foreach ($rows as $row) {
+    foreach ($rows as $row_id => $row) {
       // Explode the current row into columns:
       $cols = explode($col_delimiter, $row);
       $col_count = count($cols);
