@@ -230,11 +230,6 @@ function tablefield_field_presave($entity_type, $entity, $field, $instance, $lan
     if (empty($table['value'])) {
       $tablefield = array();
       if (!empty($table['tablefield'])) {
-        $rows_max = $table['tablefield']['rebuild']['count_rows'];
-        $cols_max = $table['tablefield']['rebuild']['count_cols'];
-        $count_rows = 0;
-        $count_cols = 0;
-
         unset($tablefield['tablefield']);
         // Sort by weight.
         uasort($table['tablefield']['tabledata'], 'drupal_sort_weight');
@@ -986,7 +981,7 @@ function tablefield_import_pasted($form, &$form_state, $langcode, $pasted_form_f
     $row_count = 0;
     $imported_tablefield = array();
     $rows = explode(PHP_EOL, $data);
-    foreach ($rows as $row_id => $row) {
+    foreach ($rows as $row) {
       // Explode the current row into columns:
       $cols = explode($col_delimiter, $row);
       $col_count = count($cols);
@@ -1195,14 +1190,12 @@ function tablefield_fill_locked_values($tablefield, $instance_default) {
  *   The rationalized tablefield.
  */
 function tablefield_rtrim_rows($tabledata) {
-  $row_num = count($tabledata);
-
   foreach ($tabledata as $key => $value) {
     array_pop($value);
     $empty = TRUE;
     if (is_array($value)) {
 
-      foreach ($value as $k2 => $v2) {
+      foreach ($value as $v2) {
         if (!empty($v2)) {
           // Stop traversing at the first non empty value.
           $empty = FALSE;
