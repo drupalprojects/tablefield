@@ -170,27 +170,27 @@ function tablefield_field_settings_form($field, $instance, $has_data) {
   $form = array();
   $form['export'] = array(
     '#type' => 'checkbox',
-    '#title' => 'Allow users to export table data as CSV',
+    '#title' => t('Allow users to export table data as CSV'),
     '#default_value' => isset($field['settings']['export']) ? $field['settings']['export'] : FALSE,
   );
   $form['restrict_rebuild'] = array(
     '#type' => 'checkbox',
-    '#title' => 'Restrict rebuilding to users with the permission "rebuild tablefield"',
+    '#title' => t('Restrict rebuilding to users with the permission "rebuild tablefield"'),
     '#default_value' => isset($field['settings']['restrict_rebuild']) ? $field['settings']['restrict_rebuild'] : FALSE,
   );
   $form['lock_values'] = array(
     '#type' => 'checkbox',
-    '#title' => 'Lock table header so default values cannot be changed.',
+    '#title' => t('Lock table header so default values cannot be changed.'),
     '#default_value' => isset($field['settings']['lock_values']) ? $field['settings']['lock_values'] : FALSE,
   );
   $form['hide_headers'] = array(
     '#type' => 'checkbox',
-    '#title' => 'Hide table header row.',
+    '#title' => t('Hide table header row.'),
     '#default_value' => isset($field['settings']['hide_headers']) ? $field['settings']['hide_headers'] : FALSE,
   );
   $form['sticky'] = array(
     '#type' => 'checkbox',
-    '#title' => 'Sticky header.',
+    '#title' => t('Sticky header.'),
     '#default_value' => isset($field['settings']['sticky']) ? $field['settings']['sticky'] : TRUE,
   );
   $form['cell_processing'] = array(
@@ -843,12 +843,12 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#collapsed' => TRUE,
   );
   $delimiters = array(
-    'TAB' => 'TAB',
-    ',' => 'Comma ,',
-    ';' => 'Semicolon ;',
-    '|' => 'Pipe |',
-    '+' => 'Plus +',
-    ':' => 'Colon :',
+    'TAB' => t('TAB'),
+    ',' => t('Comma ,'),
+    ';' => t('Semicolon ;'),
+    '|' => t('Pipe |'),
+    '+' => t('Plus +'),
+    ':' => t('Colon :'),
   );
   $element['tablefield']['paste']['paste_delimiter'] = array(
     '#type' => 'select',
