@@ -349,7 +349,7 @@ function tablefield_field_formatter_info() {
       'settings' => array(
         'trim_trailing_rows' => FALSE,
         'trim_trailing_cols' => FALSE,
-        'trim_trailing_cols_skip_head' => FALSE,
+        'hide_cols_skip_head' => FALSE,
       ),
     ),
   );
@@ -364,11 +364,11 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
   if ($display['type'] === 'tablefield_default') {
     $trim_trailing_rows = empty($settings['trim_trailing_rows']) ? t('No') : t('Yes');
     $trim_trailing_cols = empty($settings['trim_trailing_cols']) ? t('No') : t('Yes');
-    $trim_trailing_cols_skip_head = empty($settings['trim_trailing_cols_skip_head']) ? t('No') : t('Yes');
+    $hide_cols_skip_head = empty($settings['hide_cols_skip_head']) ? t('No') : t('Yes');
     return t('Trim empty trailing rows: %tr',
       array('%tr' => $trim_trailing_rows)) . '<br>' . t('Trim empty trailing columns: %tr',
-      array('%tr' => $trim_trailing_cols)) . '<br>' . t('Trim empty trailing columns ignore header: %tr',
-      array('%tr' => $trim_trailing_cols_skip_head));
+      array('%tr' => $trim_trailing_cols)) . '<br>' . t('Hide empty columns ignoring column header: %tr',
+      array('%tr' => $hide_cols_skip_head));
   }
   return '';
 }
@@ -391,10 +391,10 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
       '#type' => 'checkbox',
       '#default_value' => $settings['trim_trailing_cols'],
     );
-    $element['trim_trailing_cols_skip_head'] = array(
-      '#title' => t('Trim empty trailing columns ignore header'),
+    $element['hide_cols_skip_head'] = array(
+      '#title' => t('Hide empty columns ignoring column header:'),
       '#type' => 'checkbox',
-      '#default_value' => $settings['trim_trailing_cols_skip_head'],
+      '#default_value' => $settings['hide_cols_skip_head'],
     );
   }
   return $element;
@@ -433,7 +433,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
           $tabledata['tabledata'] = tablefield_rtrim_cols($tabledata['tabledata']);
         }
 
-        if (!empty($settings['trim_trailing_cols_skip_head'])) {
+        if (!empty($settings['hide_cols_skip_head'])) {
           $tabledata['tabledata'] = tablefield_rtrim_cols($tabledata['tabledata'], TRUE);
         }
 
