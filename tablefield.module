@@ -349,6 +349,8 @@ function tablefield_field_formatter_info() {
       'settings' => array(
         'trim_trailing_rows' => FALSE,
         'trim_trailing_cols' => FALSE,
+        'hide_empty_rows' => FALSE,
+        'hide_empty_cols' => FALSE,
         'hide_cols_skip_head' => FALSE,
       ),
     ),
@@ -364,10 +366,14 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
   if ($display['type'] === 'tablefield_default') {
     $trim_trailing_rows = empty($settings['trim_trailing_rows']) ? t('No') : t('Yes');
     $trim_trailing_cols = empty($settings['trim_trailing_cols']) ? t('No') : t('Yes');
+    $hide_empty_rows = empty($settings['hide_empty_rows']) ? t('No') : t('Yes');
+    $hide_empty_cols = empty($settings['hide_empty_cols']) ? t('No') : t('Yes');
     $hide_cols_skip_head = empty($settings['hide_cols_skip_head']) ? t('No') : t('Yes');
     return t('Trim empty trailing rows: %tr',
       array('%tr' => $trim_trailing_rows)) . '<br>' . t('Trim empty trailing columns: %tr',
-      array('%tr' => $trim_trailing_cols)) . '<br>' . t('Hide empty columns ignoring column header: %tr',
+      array('%tr' => $trim_trailing_cols)) . '<br>' . t('Hide empty rows: %tr',
+      array('%tr' => $hide_empty_rows)) . '<br>' . t('Hide empty columns: %tr',
+      array('%tr' => $hide_empty_cols)) . '<br>' . t('Hide empty columns ignoring column header: %tr',
       array('%tr' => $hide_cols_skip_head));
   }
   return '';
@@ -390,6 +396,16 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
       '#title' => t('Trim empty trailing columns'),
       '#type' => 'checkbox',
       '#default_value' => $settings['trim_trailing_cols'],
+    );
+    $element['hide_empty_rows'] = array(
+      '#title' => t('Hide empty rows'),
+      '#type' => 'checkbox',
+      '#default_value' => $settings['hide_empty_rows'],
+    );
+    $element['hide_empty_cols'] = array(
+      '#title' => t('Hide empty columns'),
+      '#type' => 'checkbox',
+      '#default_value' => $settings['hide_empty_cols'],
     );
     $element['hide_cols_skip_head'] = array(
       '#title' => t('Hide empty columns ignoring column header:'),
@@ -426,11 +442,19 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
       if (!empty($tabledata['tabledata'])) {
 
         if (!empty($settings['trim_trailing_rows'])) {
-          $tabledata['tabledata'] = tablefield_rtrim_rows($tabledata['tabledata']);
+          $tabledata['tabledata'] = tablefield_trim($tabledata['tabledata']);
         }
 
         if (!empty($settings['trim_trailing_cols'])) {
           $tabledata['tabledata'] = tablefield_rtrim_cols($tabledata['tabledata']);
+        }
+
+        if (!empty($settings['hide_empty_rows'])) {
+          $tabledata['tabledata'] = tablefield_hide_rows($tabledata['tabledata']);
+        }
+
+        if (!empty($settings['hide_empty_cols'])) {
+          $tabledata['tabledata'] = tablefield_hide_cols($tabledata['tabledata']);
         }
 
         if (!empty($settings['hide_cols_skip_head'])) {
@@ -1198,12 +1222,99 @@ function tablefield_fill_locked_values($tablefield, $instance_default) {
 }
 
 /**
- * Trim trailing empty rows.
+ * Trim trailing empty rows/columns.
  *
  * @param array $tabledata
  *   The rationalized tablefield.
+ * @param bool $ignore_head
+ *   Whether ignoring header or not.
  */
-function tablefield_rtrim_rows($tabledata, $ignore_head = FALSE) {
+function tablefield_trim($tabledata, $ignore_head = FALSE) {
+  $tabledata = array_reverse($tabledata);
+  // For columns the transposed array has the 'weight' one level higher.
+  unset($tabledata['weight']);
+  foreach ($tabledata as $key => $value) {
+    // Removes the weight key for the rows.
+    unset($value['weight']);
+    $empty = TRUE;
+    if (is_array($value)) {
+      foreach ($value as $k2 => $v2) {
+        if (!empty($v2)) {
+          // Stop traversing at the first non empty value.
+          if (!$ignore_head || ($ignore_head && $k2 !== 'row_0')) {
+            $empty = FALSE;
+          }
+        }
+      }
+    }
+    else {
+      if (!empty($value)) {
+        // Stop traversing at the first non empty value.
+        $empty = FALSE;
+      }
+    }
+
+    if ($empty) {
+      unset($tabledata[$key]);
+    }
+    else {
+      break;
+    }
+  }
+  $tabledata = array_reverse($tabledata);
+
+  return $tabledata;
+}
+
+/**
+ * Trim trailing empty columns.
+ *
+ * @param array $tabledata
+ *   The rationalized tablefield.
+ * @param bool $ignore_head
+ *   Whether ignoring header or not.
+ */
+function tablefield_rtrim_cols($tabledata, $ignore_head = FALSE) {
+  $row_num = count($tabledata);
+
+  if (!$row_num) {
+    return $tabledata;
+  }
+
+  // Transpose the array.
+  $tabledata = tablefield_transpose($tabledata);
+
+  // Trim trailing empty rows.
+  $tabledata = tablefield_trim($tabledata, $ignore_head);
+
+  // Transpose back.
+  $tabledata = tablefield_transpose($tabledata);
+
+  return $tabledata;
+}
+
+/**
+ * Helper function to transpose table data arrays.
+ */
+function tablefield_transpose($array) {
+  $transposed = array();
+  foreach ($array as $key => $row) {
+    foreach ($row as $subkey => $value) {
+      $transposed[$subkey][$key] = $value;
+    }
+  }
+  return $transposed;
+}
+
+/**
+ * Hide all empty rows.
+ *
+ * @param array $tabledata
+ *   The rationalized tablefield.
+ * @param bool $ignore_head
+ *   Whether ignoring header or not.
+ */
+function tablefield_hide_rows($tabledata, $ignore_head = FALSE) {
   foreach ($tabledata as $key => $value) {
     // Removes the weight key.
     unset($value['weight']);
@@ -1235,14 +1346,14 @@ function tablefield_rtrim_rows($tabledata, $ignore_head = FALSE) {
 }
 
 /**
- * Trim trailing empty columns.
+ * Hide all empty columns.
  *
  * @param array $tabledata
  *   The rationalized tablefield.
  * @param bool $ignore_head
  *   Whether ignoring header or not.
  */
-function tablefield_rtrim_cols($tabledata, $ignore_head = FALSE) {
+function tablefield_hide_cols($tabledata, $ignore_head = FALSE) {
   $row_num = count($tabledata);
 
   if (!$row_num) {
@@ -1253,23 +1364,10 @@ function tablefield_rtrim_cols($tabledata, $ignore_head = FALSE) {
   $tabledata = tablefield_transpose($tabledata);
 
   // Trim trailing empty rows.
-  $tabledata = tablefield_rtrim_rows($tabledata, $ignore_head);
+  $tabledata = tablefield_hide_rows($tabledata, $ignore_head);
 
   // Transpose back.
   $tabledata = tablefield_transpose($tabledata);
 
   return $tabledata;
-}
-
-/**
- * Helper function to transpose table data arrays.
- */
-function tablefield_transpose($array) {
-  $transposed = array();
-  foreach ($array as $key => $row) {
-    foreach ($row as $subkey => $value) {
-      $transposed[$subkey][$key] = $value;
-    }
-  }
-  return $transposed;
 }
