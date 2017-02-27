@@ -26,6 +26,7 @@ function tablefield_disable() {
  */
 function tablefield_uninstall() {
   variable_del('tablefield_csv_separator');
+  variable_del('tablefield_detect_encodings');
 }
 
 /**
