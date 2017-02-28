@@ -59,18 +59,6 @@ function tablefield_admin_settings_form() {
 }
 
 /**
- * Form validation handler for tablefield_admin_settings_form().
- *
- * @see tablefield_admin_settings_form()
- */
-function tablefield_admin_settings_form_validate($form, &$form_state) {
-  if (drupal_strlen($form_state['values']['tablefield_csv_separator']) !== 1) {
-    $message = t('Separator must be one character only!');
-    form_set_error('tablefield_csv_separator', $message);
-  }
-}
-
-/**
  * Implements hook_permission().
  */
 function tablefield_permission() {
@@ -1381,33 +1369,6 @@ function tablefield_convert_encoding($data, $encoding) {
 
   // Fallback on the input data.
   return $data;
-}
-
-/**
- * Helper function to fill in locked values from instance defaults.
- *
- * @param array $tablefield
- *   The table as it appears in FAPI.
- * @param array $instance_default
- *   Instance default tablefield.
- *
- * @return array
- *   Filled tablefield.
- */
-function tablefield_fill_locked_values($tablefield, $instance_default) {
-  if (!empty($tablefield['rebuild'])) {
-    $count_cols = $tablefield['rebuild']['count_cols'];
-    $count_rows = $tablefield['rebuild']['count_rows'];
-
-    for ($i = 0; $i < $count_rows; $i++) {
-      for ($ii = 0; $ii < $count_cols; $ii++) {
-        if (!isset($tablefield["row_${i}"]["col_${ii}"])) {
-          $tablefield["row_${i}"]["col_${ii}"] = isset($instance_default["row_${i}"]["col_${ii}"]) ? $instance_default["row_${i}"]["col_${ii}"] : '';
-        }
-      }
-    }
-  }
-  return $tablefield;
 }
 
 /**

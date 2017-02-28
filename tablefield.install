@@ -6,22 +6,6 @@
  */
 
 /**
- * Implements hook_enable().
- *
- * Notify content module when this module is enabled.
- */
-function tablefield_enable() {
-}
-
-/**
- * Implements hook_disable().
- *
- * Notify content module when this module is disabled.
- */
-function tablefield_disable() {
-}
-
-/**
  * Implements hook_uninstall().
  */
 function tablefield_uninstall() {
@@ -38,7 +22,6 @@ function tablefield_update_dependencies() {
   $dependencies['text'][7000] = array(
     'filter' => 7010,
   );
-
   return $dependencies;
 }
 
