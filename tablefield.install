@@ -247,3 +247,32 @@ function tablefield_update_7003() {
   field_cache_clear();
   drupal_set_message(t('All Table Field fields are now stored with a new data format.'), 'warning');
 }
+
+/**
+ * Convert field settings to display settings.
+ */
+function tablefield_update_7004() {
+  $instances = field_info_instances();
+  $field_names = array();
+  foreach ($instances as $entity_type => $entities) {
+    foreach ($entities as $bundle => $fields) {
+      foreach ($fields as $field_name => $instance) {
+        $field_info = field_info_field($field_name);
+        if (in_array($instance['widget']['type'], array('tablefield'))) {
+          // Uniquely store the field names in an array for later use.
+          if (!in_array($instance['field_name'], $field_names)) {
+            array_push($field_names, $instance['field_name']);
+          }
+          // Convert the entity properties.
+          foreach ($instance['display'] as $view_mode => $occurrence) {
+            $instance['display'][$view_mode]['settings']['hide_header'] = $field_info['settings']['hide_headers'] ? 1 : 0;
+            $instance['display'][$view_mode]['settings']['export_csv'] = $field_info['settings']['export'] ? 1 : 0;
+          }
+          field_update_instance($instance);
+        }
+      }
+    }
+  }
+  field_cache_clear();
+  drupal_set_message(t('All Table Field fields have their display related field settings converted to display settings.'), 'warning');
+}

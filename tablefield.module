@@ -180,11 +180,6 @@ function tablefield_property_info_callback(&$info, $entity_type, $field, $instan
  */
 function tablefield_field_settings_form($field, $instance, $has_data) {
   $form = array();
-  $form['export'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Allow users to export table data as CSV'),
-    '#default_value' => isset($field['settings']['export']) ? $field['settings']['export'] : FALSE,
-  );
   $form['restrict_rebuild'] = array(
     '#type' => 'checkbox',
     '#title' => t('Restrict rebuilding to users with the permission "rebuild tablefield"'),
@@ -194,16 +189,6 @@ function tablefield_field_settings_form($field, $instance, $has_data) {
     '#type' => 'checkbox',
     '#title' => t('Lock table header so default values cannot be changed.'),
     '#default_value' => isset($field['settings']['lock_values']) ? $field['settings']['lock_values'] : FALSE,
-  );
-  $form['hide_headers'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Hide table header row.'),
-    '#default_value' => isset($field['settings']['hide_headers']) ? $field['settings']['hide_headers'] : FALSE,
-  );
-  $form['sticky'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Sticky header.'),
-    '#default_value' => isset($field['settings']['sticky']) ? $field['settings']['sticky'] : TRUE,
   );
   $form['cell_processing'] = array(
     '#type' => 'radios',
@@ -359,11 +344,14 @@ function tablefield_field_formatter_info() {
       'label' => t('Tabular view'),
       'field types' => array('tablefield'),
       'settings' => array(
-        'trim_trailing_rows' => FALSE,
-        'trim_trailing_cols' => FALSE,
+        'sticky_header' => TRUE,
+        'hide_header' => FALSE,
         'hide_empty_rows' => FALSE,
         'hide_empty_cols' => FALSE,
         'hide_cols_skip_head' => FALSE,
+        'trim_trailing_cols' => FALSE,
+        'trim_trailing_rows' => FALSE,
+        'export_csv' => FALSE,
       ),
     ),
     'format_raw' => array(
@@ -393,11 +381,20 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
       break;
 
     default:
+      $summary[] = t('Sticky header: %tr', array('%tr' => ($settings['sticky_header']) ? t('Yes') : t('No')));
+      $summary[] = t('Hide table header: %tr', array('%tr' => ($settings['hide_header']) ? t('Yes') : t('No')));
+      $summary[] = t('Hide empty columns ignoring column header: %tr', array('%tr' => ($settings['hide_cols_skip_head']) ? t('Yes') : t('No')));
       $summary[] = t('Trim empty trailing rows: %tr', array('%tr' => ($settings['trim_trailing_rows']) ? t('Yes') : t('No')));
       $summary[] = t('Trim empty trailing columns: %tr', array('%tr' => ($settings['trim_trailing_cols']) ? t('Yes') : t('No')));
       $summary[] = t('Hide empty rows: %tr', array('%tr' => ($settings['hide_empty_rows']) ? t('Yes') : t('No')));
       $summary[] = t('Hide empty columns: %tr', array('%tr' => ($settings['hide_empty_cols']) ? t('Yes') : t('No')));
-      $summary[] = t('Hide empty columns ignoring column header: %tr', array('%tr' => ($settings['hide_cols_skip_head']) ? t('Yes') : t('No')));
+      $permission = l(t('permission'), 'admin/people/permissions', array(
+        'fragment' => 'module-tablefield',
+        'attributes' => array(
+          'title' => t('Manage user permissions'),
+        ),
+      ));
+      $summary[] = t('Show link to export table data as CSV depending on !permission: %tr', array('%tr' => ($settings['hide_cols_skip_head']) ? t('Yes') : t('No'), '!permission' => $permission));
   }
   return implode('<br />', $summary);;
 }
@@ -434,15 +431,30 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
       break;
 
     default:
-      $element['trim_trailing_rows'] = array(
-        '#title' => t('Trim empty trailing rows'),
+      $element['sticky_header'] = array(
+        '#title' => t('Sticky header'),
         '#type' => 'checkbox',
-        '#default_value' => $settings['trim_trailing_rows'],
+        '#default_value' => $settings['sticky_header'],
+      );
+      $element['hide_header'] = array(
+        '#title' => t('Hide table header row'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['hide_header'],
+      );
+      $element['hide_cols_skip_head'] = array(
+        '#title' => t('Hide empty columns ignoring column header'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['hide_cols_skip_head'],
       );
       $element['trim_trailing_cols'] = array(
         '#title' => t('Trim empty trailing columns'),
         '#type' => 'checkbox',
         '#default_value' => $settings['trim_trailing_cols'],
+      );
+      $element['trim_trailing_rows'] = array(
+        '#title' => t('Trim empty trailing rows'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['trim_trailing_rows'],
       );
       $element['hide_empty_rows'] = array(
         '#title' => t('Hide empty rows'),
@@ -458,6 +470,17 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
         '#title' => t('Hide empty columns ignoring column header'),
         '#type' => 'checkbox',
         '#default_value' => $settings['hide_cols_skip_head'],
+      );
+      $permission = l(t('permission'), 'admin/people/permissions', array(
+        'fragment' => 'module-tablefield',
+        'attributes' => array(
+          'title' => t('Manage user permissions'),
+        ),
+      ));
+      $element['export_csv'] = array(
+        '#title' => t('Show link to export table data as CSV depending on !permission', array('!permission' => $permission)),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['export_csv'],
       );
   }
   return $element;
@@ -637,7 +660,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
 
             // Check for an empty header, if so we don't want to theme it.
             $noheader = TRUE;
-            if (empty($field['settings']['hide_headers']) && $header_data) {
+            if (empty($settings['hide_header']) && $header_data) {
               foreach ($header_data as $cell) {
                 if (strlen($cell['data']) > 0) {
                   $noheader = FALSE;
@@ -660,11 +683,11 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
                 'class' => array('tablefield'),
               ),
               '#caption' => $caption,
-              '#sticky' => isset($field['settings']['sticky']) ? $field['settings']['sticky'] : NULL,
+              '#sticky' => isset($settings['sticky_header']) ? $settings['sticky_header'] : NULL,
               '#header' => $header,
               '#rows' => $tabledata,
               '#delta' => $delta,
-              '#export' => isset($field['settings']['export']) ? $field['settings']['export'] : NULL,
+              '#export' => isset($settings['export_csv']) ? $settings['export_csv'] : NULL,
               '#entity_type' => $entity_type,
               '#entity_id' => $entity_id,
               '#field_name' => $field['field_name'],
@@ -704,6 +727,7 @@ function tablefield_field_widget_info() {
  */
 function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   $form['#after_build'][] = 'tablefield_after_build';
+  $settings = isset($instance['display']['default']['settings']) ? $instance['display']['default']['settings'] : FALSE;
   $element['#type'] = 'tablefield';
   $form['#attributes']['enctype'] = 'multipart/form-data';
 
@@ -793,11 +817,18 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     $help_text = $instance['description'];
   }
   else {
-    if ($field['settings']['hide_headers'] == TRUE) {
-      $help_text = t('This table will not have a header.');
-    }
-    else {
-      $help_text = t('The first row will appear as the table header. Leave the first row blank if you do not need a header.');
+    if ($settings) {
+      $display_settings = l(t('default display settings'), 'admin/structure/types/manage/' . $element['#bundle'] . '/display', array(
+        'attributes' => array(
+          'title' => t('Manage display settings'),
+        ),
+      ));
+      if ($settings['hide_header'] == TRUE) {
+        $help_text = t('This table will not have a header according to the !display_settings.', array('!display_settings' => $display_settings));
+      }
+      else {
+        $help_text = t('The first row will appear as the table header. Leave the first row blank if you do not need a header.');
+      }
     }
   }
 
@@ -814,8 +845,10 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#prefix' => '<div id="' . $ajax_wrapper_id . '">',
     '#suffix' => '</div>',
   );
-  if (!empty($field['settings']['hide_headers'])) {
-    $element['tablefield']['#attributes']['class'][] = 'table-no-headers';
+  if ($settings) {
+    if ($settings['hide_header']) {
+      $element['tablefield']['#attributes']['class'][] = 'table-no-headers';
+    }
   }
 
   // Give the fieldset the appropriate class if it is required.
@@ -828,8 +861,10 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $arg0 = arg(0);
   if ($arg0 == 'admin') {
     $element['tablefield']['#description'] = t('This form defines the table field defaults, but the number of rows/columns and content can be overridden.');
-    if (!$field['settings']['hide_headers']) {
-      $element['tablefield']['#description'] .= ' ' . t('The first row will appear as the table header. Leave the first row blank if you do not need a header.');
+    if ($settings) {
+      if (!$settings['hide_header']) {
+        $element['tablefield']['#description'] .= ' ' . t('The first row will appear as the table header. Leave the first row blank if you do not need a header.');
+      }
     }
   }
 
