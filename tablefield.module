@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Provides a set of fields that can be used to store tabular data with a node.
@@ -355,7 +356,7 @@ function tablefield_field_is_empty($item, $field) {
 function tablefield_field_formatter_info() {
   return array(
     'tablefield_default' => array(
-      'label' => t('Tabular View'),
+      'label' => t('Tabular view'),
       'field types' => array('tablefield'),
       'settings' => array(
         'trim_trailing_rows' => FALSE,
@@ -363,6 +364,15 @@ function tablefield_field_formatter_info() {
         'hide_empty_rows' => FALSE,
         'hide_empty_cols' => FALSE,
         'hide_cols_skip_head' => FALSE,
+      ),
+    ),
+    'format_raw' => array(
+      'label' => t('Raw data (JSON)'),
+      'field types' => array('tablefield'),
+      'settings' => array(
+        'usearraykeys' => 'No',
+        'vertheader' => FALSE,
+        'tabledataonly' => FALSE,
       ),
     ),
   );
@@ -374,20 +384,22 @@ function tablefield_field_formatter_info() {
 function tablefield_field_formatter_settings_summary($field, $instance, $view_mode) {
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
-  if ($display['type'] === 'tablefield_default') {
-    $trim_trailing_rows = empty($settings['trim_trailing_rows']) ? t('No') : t('Yes');
-    $trim_trailing_cols = empty($settings['trim_trailing_cols']) ? t('No') : t('Yes');
-    $hide_empty_rows = empty($settings['hide_empty_rows']) ? t('No') : t('Yes');
-    $hide_empty_cols = empty($settings['hide_empty_cols']) ? t('No') : t('Yes');
-    $hide_cols_skip_head = empty($settings['hide_cols_skip_head']) ? t('No') : t('Yes');
-    return t('Trim empty trailing rows: %tr',
-      array('%tr' => $trim_trailing_rows)) . '<br>' . t('Trim empty trailing columns: %tr',
-      array('%tr' => $trim_trailing_cols)) . '<br>' . t('Hide empty rows: %tr',
-      array('%tr' => $hide_empty_rows)) . '<br>' . t('Hide empty columns: %tr',
-      array('%tr' => $hide_empty_cols)) . '<br>' . t('Hide empty columns ignoring column header: %tr',
-      array('%tr' => $hide_cols_skip_head));
+  $summary = array();
+  switch ($display['type']) {
+    case 'format_raw':
+      $summary[] = t('Use first row/column values as array keys (if not empty): %tr', array('%tr' => $settings['usearraykeys']));
+      $summary[] = t('Vertical header (first column instead of first row): %tr', array('%tr' => $settings['vertheader'] ? t('Yes') : t('No')));
+      $summary[] = t('Table data only (no caption): %tr', array('%tr' => ($settings['tabledataonly']) ? t('Yes') : t('No')));
+      break;
+
+    default:
+      $summary[] = t('Trim empty trailing rows: %tr', array('%tr' => ($settings['trim_trailing_rows']) ? t('Yes') : t('No')));
+      $summary[] = t('Trim empty trailing columns: %tr', array('%tr' => ($settings['trim_trailing_cols']) ? t('Yes') : t('No')));
+      $summary[] = t('Hide empty rows: %tr', array('%tr' => ($settings['hide_empty_rows']) ? t('Yes') : t('No')));
+      $summary[] = t('Hide empty columns: %tr', array('%tr' => ($settings['hide_empty_cols']) ? t('Yes') : t('No')));
+      $summary[] = t('Hide empty columns ignoring column header: %tr', array('%tr' => ($settings['hide_cols_skip_head']) ? t('Yes') : t('No')));
   }
-  return '';
+  return implode('<br />', $summary);;
 }
 
 /**
@@ -397,32 +409,56 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
   $element = array();
-  if ($display['type'] === 'tablefield_default') {
-    $element['trim_trailing_rows'] = array(
-      '#title' => t('Trim empty trailing rows'),
-      '#type' => 'checkbox',
-      '#default_value' => $settings['trim_trailing_rows'],
-    );
-    $element['trim_trailing_cols'] = array(
-      '#title' => t('Trim empty trailing columns'),
-      '#type' => 'checkbox',
-      '#default_value' => $settings['trim_trailing_cols'],
-    );
-    $element['hide_empty_rows'] = array(
-      '#title' => t('Hide empty rows'),
-      '#type' => 'checkbox',
-      '#default_value' => $settings['hide_empty_rows'],
-    );
-    $element['hide_empty_cols'] = array(
-      '#title' => t('Hide empty columns'),
-      '#type' => 'checkbox',
-      '#default_value' => $settings['hide_empty_cols'],
-    );
-    $element['hide_cols_skip_head'] = array(
-      '#title' => t('Hide empty columns ignoring column header:'),
-      '#type' => 'checkbox',
-      '#default_value' => $settings['hide_cols_skip_head'],
-    );
+  switch ($display['type']) {
+    case 'format_raw':
+      $element['usearraykeys'] = array(
+        '#type' => 'select',
+        '#title' => t('Use first row/column values as array keys (if not empty)'),
+        '#options' => array(
+          'No' => t('No'),
+          'Header' => t('Header only'),
+          'Both' => t('Both first row and first column (two headers, horizontal and vertical)'),
+        ),
+        '#default_value' => $settings['usearraykeys'],
+      );
+      $element['vertheader'] = array(
+        '#title' => t('Vertical header (first column instead of first row)'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['vertheader'],
+      );
+      $element['tabledataonly'] = array(
+        '#title' => t('Table data only (no caption)'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['tabledataonly'],
+      );
+      break;
+
+    default:
+      $element['trim_trailing_rows'] = array(
+        '#title' => t('Trim empty trailing rows'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['trim_trailing_rows'],
+      );
+      $element['trim_trailing_cols'] = array(
+        '#title' => t('Trim empty trailing columns'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['trim_trailing_cols'],
+      );
+      $element['hide_empty_rows'] = array(
+        '#title' => t('Hide empty rows'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['hide_empty_rows'],
+      );
+      $element['hide_empty_cols'] = array(
+        '#title' => t('Hide empty columns'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['hide_empty_cols'],
+      );
+      $element['hide_cols_skip_head'] = array(
+        '#title' => t('Hide empty columns ignoring column header'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['hide_cols_skip_head'],
+      );
   }
   return $element;
 }
@@ -434,108 +470,215 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
   $element = array();
   $settings = $display['settings'];
   $formatter = $display['type'];
-
-  foreach ($items as $delta => $table) {
-    // Check for table caption.
-    $raw = unserialize($table['value']);
-    $caption = isset($raw['caption']) ? check_plain($raw['caption']) : '';
-
-    // Rationalize the stored data.
-    if (!empty($table['tablefield'])) {
-      $tabledata = $table['tablefield'];
-    }
-    elseif (!empty($table['value'])) {
-      $tabledata = unserialize($table['value']);
-    }
-
-    // Run the table through input filters.
-    if (isset($tabledata['tabledata'])) {
-      if (!empty($tabledata['tabledata'])) {
-
-        if (!empty($settings['trim_trailing_rows'])) {
-          $tabledata['tabledata'] = tablefield_trim($tabledata['tabledata']);
-        }
-
-        if (!empty($settings['trim_trailing_cols'])) {
-          $tabledata['tabledata'] = tablefield_rtrim_cols($tabledata['tabledata']);
-        }
-
-        if (!empty($settings['hide_empty_rows'])) {
-          $tabledata['tabledata'] = tablefield_hide_rows($tabledata['tabledata']);
-        }
-
-        if (!empty($settings['hide_empty_cols'])) {
-          $tabledata['tabledata'] = tablefield_hide_cols($tabledata['tabledata']);
-        }
-
-        if (!empty($settings['hide_cols_skip_head'])) {
-          $tabledata['tabledata'] = tablefield_rtrim_cols($tabledata['tabledata'], TRUE);
-        }
-
-        foreach ($tabledata['tabledata'] as $row_key => $row) {
-          foreach ($row as $col_key => $cell) {
-            if (!empty($table['format']) && $col_key !== 'weight') {
-              $tabledata[$row_key][$col_key] = array(
-                'data' => check_markup($cell, $table['format']),
-                'class' => array($row_key, $col_key),
-              );
-            }
-            elseif ($col_key !== 'weight') {
-              $tabledata[$row_key][$col_key] = array(
-                'data' => check_plain($cell),
-                'class' => array($row_key, $col_key),
-              );
+  $prettyprint = FALSE;
+  if (!empty($items)) {
+    $i = 0;
+    $len = count($items);
+    foreach ($items as $delta => $table) {
+      // If we are not on the last iteration of the loop use a separator.
+      $separator = ($i == $len - 1) ? '' : ',';
+      switch ($display['type']) {
+        case 'format_raw':
+          $value = unserialize($table['value']);
+          // Swap rows and columns if the header is vertical (first column).
+          if ($settings['vertheader']) {
+            $transposed = tablefield_transpose($value['tabledata']);
+            unset($value['tabledata']);
+            array_pop($transposed);
+            // Swap column and row key names.
+            foreach ($transposed as $colk => $colv) {
+              foreach ($colv as $rowk => $rowv) {
+                $value['tabledata'][str_replace('col_', 'row_', $colk)][str_replace('row_', 'col_', $rowk)] = $rowv;
+              }
+              // Add a 'weight' although the value is not relevant.
+              $value['tabledata'][str_replace('col_', 'row_', $colk)]['weight'] = 0;
             }
           }
-        }
-      }
+          // Remove unneeded data.
+          unset($value['rebuild']);
+          unset($value['import']);
+          unset($value['paste']);
+          if ($settings['usearraykeys'] === 'Header' || $settings['usearraykeys'] === 'Both') {
+            // Keep first row values (header) to use for array keys later.
+            $keys = $value['tabledata']['row_0'];
+            // If a header value is empty use the column key (col_#).
+            foreach ($keys as $key => $content) {
+              if (empty($content)) {
+                $keys[$key] = $key;
+              }
+            }
+            // Warning about columns with duplicate names being suppressed.
+            $unique = array_unique($keys);
+            $duplicates = array_diff_assoc($keys, $unique);
+            foreach ($duplicates as $duplicate) {
+              drupal_set_message(t('The column header "%key" appears multiple times in a table. In the JSON output only the last column with this key is used to avoid duplicate names.', array('%key' => $duplicate)), 'warning', FALSE);
+            }
+            unset($keys['weight']);
+            // Remove the first row (header).
+            unset($value['tabledata']['row_0']);
 
-      // Pull the header for theming.
-      unset($tabledata['caption']);
-      unset($tabledata['tabledata']);
-      unset($tabledata['rebuild']);
-      unset($tabledata['import']);
-      unset($tabledata['paste']);
-      $header_data = isset($tabledata['row_0']) ? $tabledata['row_0'] : NULL;
-
-      // Check for an empty header, if so we don't want to theme it.
-      $noheader = TRUE;
-      if (empty($field['settings']['hide_headers']) && $header_data) {
-        foreach ($header_data as $cell) {
-          if (strlen($cell['data']) > 0) {
-            $noheader = FALSE;
-            break;
+            if ($settings['usearraykeys'] === 'Both') {
+              // Remove the first column from the keys.
+              unset($keys['col_0']);
+              // Make number of elements same as $row for array_combine later.
+              unset($keys['weight']);
+            }
           }
-        }
+          foreach ($value['tabledata'] as $key => $row) {
+            unset($row['weight']);
+            if ($settings['usearraykeys'] === 'Header' || $settings['usearraykeys'] === 'Both') {
+              if ($settings['usearraykeys'] === 'Both') {
+                $row_ident = $row['col_0'];
+                // Clean up unneeded data.
+                unset($value['tabledata'][$key]);
+                unset($row['col_0']);
+                $row = array_combine($keys, $row);
+                // If the first column value is empty use the row key (row_#).
+                $row_id = empty($row_ident) ? $key : $row_ident;
+                // Warning about rows with duplicate names being suppressed.
+                if (isset($value['tabledata'][$row_id])) {
+                  drupal_set_message(t('The row header "%row_id" appears multiple times in a table. In the JSON output only the last row with this key is used to avoid duplicate names.', array('%row_id' => $row_id)), 'warning', FALSE);
+                }
+                $value['tabledata'][$row_id] = $row;
+                // Remove the old key from the data set if it was replaced.
+                if (!empty($row_ident)) {
+                  unset($value['tabledata'][$key]);
+                }
+              }
+              $unique = array_unique($keys);
+              $row = array_combine($unique, $row);
+            }
+            if ($settings['usearraykeys'] != 'Both') {
+              $value['tabledata'][$key] = $row;
+            }
+          }
+          // DEVELOPERS! Extra future data should be unset below (e.g. title).
+          if ($settings['tabledataonly']) {
+            unset($value['caption']);
+            $value = reset($value);
+          }
+          // Assign the markup showing pretty print on node pages.
+          if (menu_get_object()) {
+            $prettyprint = TRUE;
+            $element[$delta] = array(
+              '#markup' => str_replace(array("\r", "\n", "\t"), "<br />", json_encode($value, JSON_PRETTY_PRINT)) . $separator,
+            );
+          }
+          // And raw on other pages.
+          else {
+            $element[$delta] = array(
+              '#markup' => drupal_json_encode($value) . $separator,
+            );
+          }
+          break;
+
+        default:
+          // Check for table caption.
+          $raw = unserialize($table['value']);
+          $caption = isset($raw['caption']) ? check_plain($raw['caption']) : '';
+
+          // Rationalize the stored data.
+          if (!empty($table['tablefield'])) {
+            $tabledata = $table['tablefield'];
+          }
+          elseif (!empty($table['value'])) {
+            $tabledata = unserialize($table['value']);
+          }
+
+          // Run the table through input filters.
+          if (isset($tabledata['tabledata'])) {
+            if (!empty($tabledata['tabledata'])) {
+
+              if ($settings['trim_trailing_rows']) {
+                $tabledata['tabledata'] = tablefield_trim($tabledata['tabledata']);
+              }
+
+              if ($settings['trim_trailing_cols']) {
+                $tabledata['tabledata'] = tablefield_rtrim_cols($tabledata['tabledata']);
+              }
+
+              if ($settings['hide_empty_rows']) {
+                $tabledata['tabledata'] = tablefield_hide_rows($tabledata['tabledata']);
+              }
+
+              if ($settings['hide_empty_cols']) {
+                $tabledata['tabledata'] = tablefield_hide_cols($tabledata['tabledata']);
+              }
+
+              if ($settings['hide_cols_skip_head']) {
+                $tabledata['tabledata'] = tablefield_hide_cols($tabledata['tabledata'], TRUE);
+              }
+
+              foreach ($tabledata['tabledata'] as $row_key => $row) {
+                foreach ($row as $col_key => $cell) {
+                  if (!empty($table['format']) && $col_key !== 'weight') {
+                    $tabledata[$row_key][$col_key] = array(
+                      'data' => check_markup($cell, $table['format']),
+                      'class' => array($row_key, $col_key),
+                    );
+                  }
+                  elseif ($col_key !== 'weight') {
+                    $tabledata[$row_key][$col_key] = array(
+                      'data' => check_plain($cell),
+                      'class' => array($row_key, $col_key),
+                    );
+                  }
+                }
+              }
+            }
+
+            // Pull the header for theming.
+            unset($tabledata['caption']);
+            unset($tabledata['tabledata']);
+            unset($tabledata['rebuild']);
+            unset($tabledata['import']);
+            unset($tabledata['paste']);
+            $header_data = isset($tabledata['row_0']) ? $tabledata['row_0'] : NULL;
+
+            // Check for an empty header, if so we don't want to theme it.
+            $noheader = TRUE;
+            if (empty($field['settings']['hide_headers']) && $header_data) {
+              foreach ($header_data as $cell) {
+                if (strlen($cell['data']) > 0) {
+                  $noheader = FALSE;
+                  break;
+                }
+              }
+            }
+
+            $header = $noheader ? NULL : $header_data;
+            $entity_info = entity_get_info($entity_type);
+            $entity_id = !empty($entity_info['entity keys']['id']) ? $entity->{$entity_info['entity keys']['id']} : NULL;
+
+            // Remove the first row from the tabledata.
+            array_shift($tabledata);
+            // Theme the table for display.
+            $element[$delta] = array(
+              '#theme' => 'tablefield_view',
+              '#attributes' => array(
+                'id' => drupal_html_id('tablefield-' . $delta),
+                'class' => array('tablefield'),
+              ),
+              '#caption' => $caption,
+              '#sticky' => isset($field['settings']['sticky']) ? $field['settings']['sticky'] : NULL,
+              '#header' => $header,
+              '#rows' => $tabledata,
+              '#delta' => $delta,
+              '#export' => isset($field['settings']['export']) ? $field['settings']['export'] : NULL,
+              '#entity_type' => $entity_type,
+              '#entity_id' => $entity_id,
+              '#field_name' => $field['field_name'],
+              '#langcode' => $langcode,
+              '#formatter' => $formatter,
+            );
+          }
       }
-
-      $header = $noheader ? NULL : $header_data;
-      $entity_info = entity_get_info($entity_type);
-      $entity_id = !empty($entity_info['entity keys']['id']) ? $entity->{$entity_info['entity keys']['id']} : NULL;
-
-      // Remove the first row from the tabledata.
-      array_shift($tabledata);
-      // Theme the table for display.
-      $element[$delta] = array(
-        '#theme' => 'tablefield_view',
-        '#attributes' => array(
-          'id' => drupal_html_id('tablefield-' . $delta),
-          'class' => array('tablefield'),
-        ),
-        '#caption' => $caption,
-        '#sticky' => isset($field['settings']['sticky']) ? $field['settings']['sticky'] : NULL,
-        '#header' => $header,
-        '#rows' => $tabledata,
-        '#delta' => $delta,
-        '#export' => isset($field['settings']['export']) ? $field['settings']['export'] : NULL,
-        '#entity_type' => $entity_type,
-        '#entity_id' => $entity_id,
-        '#field_name' => $field['field_name'],
-        '#langcode' => $langcode,
-        '#formatter' => $formatter,
-      );
+      $i++;
     }
-
+  }
+  if ($prettyprint) {
+    $element['#prefix'] = '<pre>';
+    $element['#suffix'] = '</pre>';
   }
   return $element;
 }
