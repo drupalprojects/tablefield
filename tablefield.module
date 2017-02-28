@@ -1553,3 +1553,15 @@ function tablefield_hide_cols($tabledata, $ignore_head = FALSE) {
 
   return $tabledata;
 }
+
+/**
+ * Implements hook_multiple_field_remove_button_field_widgets_alter().
+ *
+ * Enable https://www.drupal.org/project/multiple_fields_remove_button.
+ */
+function tablefield_multiple_field_remove_button_field_widgets_alter(&$fieldwidgets) {
+  // Remove button for the following field type widgets.
+  $fieldwidgets = array(
+    'tablefield',
+  );
+}
