@@ -160,7 +160,39 @@ function tablefield_property_info_callback(&$info, $entity_type, $field, $instan
   $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
   $property['getter callback'] = 'entity_metadata_field_verbatim_get';
   $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+  // Needed for Search API indexing.
+  $property['property info'] = tablefield_item_property_info();
   unset($property['query callback']);
+}
+
+/**
+ * Define metadata about item properties. Search API indexing addition.
+ */
+function tablefield_item_property_info() {
+
+  $properties['table_value'] = array(
+    'type' => 'text',
+    'label' => t('The value of the table.'),
+    'computed' => TRUE,
+    'getter callback' => 'tablefield_get_table_value',
+  );
+
+  return $properties;
+}
+
+/**
+ * Get the property just as it is set in the data. Search API indexing addition.
+ */
+function tablefield_get_table_value($data, array $options, $name, $type, $info) {
+  if (isset($data['tabledata'])) {
+    $data['value'] = '';
+
+    foreach ($data['tabledata'] as $rows) {
+      $data['value'] .= implode(" ", $rows) . " ";
+    }
+  }
+
+  return trim($data['value']);
 }
 
 /**
