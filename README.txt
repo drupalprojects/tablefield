@@ -1,8 +1,6 @@
 # TableField #
 
-Provides a simple, generic form/widget to input tabular data. The
-form allows the user to select the number of rows/columns in the table, then
-enter the data via textfields. Since this is a field it is revision capable,multi-value capable and has integration with Views.
+Provides a simple, generic form/widget to input tabular data. The form allows the user to select the number of rows/columns in the table, then enter the data via textfields. Since this is a field it is revision capable,multi-value capable and has integration with Views.
 
 
 ## INSTALLATION ##
@@ -65,13 +63,16 @@ The options of all of the below settings are 'Yes'/'No' (checkbox) unless stated
 - Show link to export table data as CSV depending on permission
 
 #### Raw data (JSON) ####
-This format is intended when table data should be provided as a service.
+This format is intended to provide table data as a service. For example when using a View that outputs JSON the field configuration includes 'Formatter'. When choosing 'Raw data (JSON)' it shows the below options.
+
 - Use first row/column values as array keys (if not empty). (select)
   * No
   * Header only
   * Both first row and first column (two headers)
 - Vertical header (first column instead of first row)
 - Table data only (no caption)
+
+Using this format for a display mode for a node content type will display the JSON in pretty print.
 
 
 ## CREDITS ##
