@@ -5,6 +5,11 @@ A database update script using hook_update_N is provided that takes care of:
 - moving existing field settings to diplay settings instead, maintaining the
   values.
 
-It should be noted that the database structure has fundamentally changed. If you use custom modules that interact directly with the tablefield data you would probably have to revise the code.
+It should be noted that the database structure has fundamentally changed. If
+you use custom modules that interact directly with the tablefield data you
+would probably have to revise the code.
 
-In any case, backup your current database and take note of what current version of the module you use (of make a copy if it's a dev version). After you run update.php (or drush updb -y) check your existing tables and their settings thoroughly.
+In any case, backup your current database and take note of what current version
+of the module you use (of make a copy if it's a dev version). After you run
+update.php (or drush updb -y) check your existing tables and their settings
+thoroughly.
