@@ -33,16 +33,13 @@ Add a tablefield to any entity:
 - Change number of rows/columns per table (even within multi-value instances).
   Optionally restict that to users with the permission 'Rebuild tablefied'
   (see field settings below).
-- Optionally lock cells with default values from editing, e.g. header values.
 - Rows can be rearranged with drag and drop.
 - Upload a CSV file to be converted into a table on the fly. The used
   separator can be defined at ../admin/config/content/tablefield.
 - Copy paste tables e.g. from Excel.
 - Add a table caption.
-- Use any role allowed text format for the cells or limit it to plain text.
-- Easily remove tables from a multi-value field with the button provided by
-  https://www.drupal.org/project/multiple_fields_remove_button. Just install
-  and enable that module.
+- Easily remove tables from a multi-value field with the button. Just install
+  and enable https://www.drupal.org/project/multiple_fields_remove_button.
 
 
 ### Per field (field settings) ###
@@ -94,7 +91,9 @@ When choosing 'Raw data (JSON)' it shows the below options.
 - Table data only (no caption)
 
 Using this format for a display mode for a node content type will display the
-JSON in pretty print.
+JSON in pretty print. More logical is to use the regular 'Tabular view' for the
+node display and use the 'Raw dat (JSON)' diplay only in a View. That would
+expose the date of published tables on a site automatically as a service.
 
 
 ## CREDITS ##
@@ -102,4 +101,4 @@ JSON in pretty print.
 - Original author: Kevin Hankens (http://www.kevinhankens.com)
 - Maintainer: vitalie (https://www.drupal.org/u/vitalie)
 - Maintainer: jenlampton (https://www.drupal.org/u/jenlampton)
-- Maintainer D7: lolandese (https://www.drupal.org/u/lolandese)
+- Maintainer D7: Martin Postma (https://www.drupal.org/u/lolandese)
