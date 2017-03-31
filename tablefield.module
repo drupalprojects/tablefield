@@ -364,6 +364,7 @@ function tablefield_field_formatter_info() {
       'label' => t('Tabular view'),
       'field types' => array('tablefield'),
       'settings' => array(
+        'header_orientation' => 'Horizontal',
         'sticky_header' => TRUE,
         'hide_header' => FALSE,
         'hide_empty_rows' => FALSE,
@@ -401,8 +402,14 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
       break;
 
     default:
-      $summary[] = t('Sticky header: %tr', array('%tr' => ($settings['sticky_header']) ? t('Yes') : t('No')));
-      $summary[] = t('Hide table header: %tr', array('%tr' => ($settings['hide_header']) ? t('Yes') : t('No')));
+      $summary[] = t('Header orientation: %tr', array('%tr' => $settings['header_orientation']));
+      if ($settings['header_orientation'] === 'Vertical') {
+        $summary[] = t('Sticky header: %tr', array('%tr' => t('Disabled')));
+      }
+      else {
+        $summary[] = t('Sticky header: %tr', array('%tr' => ($settings['sticky_header']) ? t('Yes') : t('No')));
+      }
+      $summary[] = t('Hide first row: %tr', array('%tr' => ($settings['hide_header']) ? t('Yes') : t('No')));
       $summary[] = t('Hide empty columns ignoring column header: %tr', array('%tr' => ($settings['hide_cols_skip_head']) ? t('Yes') : t('No')));
       $summary[] = t('Trim empty trailing rows: %tr', array('%tr' => ($settings['trim_trailing_rows']) ? t('Yes') : t('No')));
       $summary[] = t('Trim empty trailing columns: %tr', array('%tr' => ($settings['trim_trailing_cols']) ? t('Yes') : t('No')));
@@ -451,13 +458,27 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
       break;
 
     default:
+      $element['header_orientation'] = array(
+        '#type' => 'select',
+        '#title' => t('Header orientation'),
+        '#options' => array(
+          'Horizontal' => t('First row (horizontal)'),
+          'Vertical' => t('First column (vertical)'),
+          'Both' => t('Both first row and first column (two headers, horizontal and vertical)'),
+        ),
+        '#default_value' => $settings['header_orientation'],
+      );
       $element['sticky_header'] = array(
         '#title' => t('Sticky header'),
         '#type' => 'checkbox',
         '#default_value' => $settings['sticky_header'],
       );
+      if ($settings['header_orientation'] === 'Vertical') {
+        $element['sticky_header']['#disabled'] = TRUE;
+        $element['sticky_header']['#title'] = '<span class="grayed-out">' . t('Sticky header') . '</span> | ' . t("Disabled because above only the first column is set as header.");
+      }
       $element['hide_header'] = array(
-        '#title' => t('Hide table header row'),
+        '#title' => t('Hide first row'),
         '#type' => 'checkbox',
         '#default_value' => $settings['hide_header'],
       );
@@ -703,6 +724,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
                 'class' => array('tablefield'),
               ),
               '#caption' => $caption,
+              '#header_orientation' => isset($settings['header_orientation']) ? $settings['header_orientation'] : 'Horizontal',
               '#sticky' => isset($settings['sticky_header']) ? $settings['sticky_header'] : NULL,
               '#header' => $header,
               '#rows' => $tabledata,
@@ -750,6 +772,21 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $settings = isset($instance['display']['default']['settings']) ? $instance['display']['default']['settings'] : FALSE;
   $element['#type'] = 'tablefield';
   $form['#attributes']['enctype'] = 'multipart/form-data';
+  $header_orientation = isset($settings['header_orientation']) ? $settings['header_orientation'] : 'Horizontal';
+  switch ($header_orientation) {
+    case 'Both':
+      drupal_add_css(drupal_get_path('module', 'tablefield') . '/css/tablefield_header_hor.css');
+      drupal_add_css(drupal_get_path('module', 'tablefield') . '/css/tablefield_header_vert.css');
+      break;
+
+    case 'Vertical':
+      drupal_add_css(drupal_get_path('module', 'tablefield') . '/css/tablefield_header_vert.css');
+      break;
+
+    default:
+      drupal_add_css(drupal_get_path('module', 'tablefield') . '/css/tablefield_header_hor.css');
+      break;
+  }
 
   /* Tablefield is sometimes embedded within another form by other modules, such
    * as Field Collection. Because of that, we cannot rely on field_name and
@@ -915,7 +952,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
         $element['tablefield']['tabledata']['row_' . $i]['col_' . $ii . '_display'] = array(
           '#type' => 'item',
           '#title' => $instance_default,
-          '#prefix' => '<td>',
+          '#prefix' => '<td class="col-' . $ii . '">',
           '#suffix' => '</td>',
         );
       }
@@ -931,7 +968,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
             'style' => 'min-width: 100%',
           ),
           '#default_value' => $cell_default,
-          '#prefix' => '<td>',
+          '#prefix' => '<td class="col-' . $ii . '">',
           '#suffix' => '</td>',
         );
       }
@@ -1129,7 +1166,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
  * Form #after_build callback for tablefield_field_widget_form().
  */
 function tablefield_after_build($form, &$form_state) {
-  drupal_add_css(drupal_get_path('module', 'tablefield') . '/tablefield.css');
+  drupal_add_css(drupal_get_path('module', 'tablefield') . '/css/tablefield.css');
   drupal_add_tabledrag('tablefield-editor', 'order', 'sibling', 'tablefield-weight');
   return $form;
 }
@@ -1329,8 +1366,20 @@ function tablefield_theme() {
         'field_name' => NULL,
         'langcode' => NULL,
         'formatter' => NULL,
+        'header_orientation' => 'Horizontal',
         'sticky' => NULL,
         'attributes' => array(),
+      ),
+    ),
+    'tablefield' => array(
+      'variables' => array(
+        'rows' => NULL,
+        'attributes' => array(),
+        'caption' => NULL,
+        'colgroups' => array(),
+        'header_orientation' => 'Horizontal',
+        'sticky' => NULL,
+        'empty' => NULL,
       ),
     ),
   );
@@ -1359,20 +1408,25 @@ function theme_tablefield_view($variables) {
     $export = '<div id="' . drupal_html_id('tablefield-export-link-' . $variables['delta']) . '" class="tablefield-export-link">' . l(t('Export Table Data'), $url) . '</div>';
   }
 
-  // Prepare variables for theme_table().
+  // Prepare variables for theme_tablefield().
   $theme_variables = array(
     'header' => $variables['header'],
     'rows' => $variables['rows'],
     'attributes' => $attributes,
+    'colgroups' => array(),
+    'empty' => NULL,
   );
   if (isset($variables['caption'])) {
     $theme_variables['caption'] = $variables['caption'];
+  }
+  if (isset($variables['header_orientation'])) {
+    $theme_variables['header_orientation'] = $variables['header_orientation'];
   }
   if (isset($variables['sticky'])) {
     $theme_variables['sticky'] = $variables['sticky'];
   }
   return '<div id="' . drupal_html_id('tablefield-wrapper-' . $variables['delta']) . '" class="tablefield-wrapper">'
-    . theme('table__tablefield', $theme_variables)
+    . theme('tablefield', $theme_variables)
     . $export
     . '</div>';
 }
@@ -1564,4 +1618,230 @@ function tablefield_multiple_field_remove_button_field_widgets_alter(&$fieldwidg
   $fieldwidgets = array(
     'tablefield',
   );
+}
+
+/**
+ * Returns HTML for a table. Based on the core function theme_table().
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - header: An array containing the table headers. Each element of the array
+ *     can be either a localized string or an associative array with the
+ *     following keys:
+ *     - "data": The localized title of the table column.
+ *     - "field": The database field represented in the table column (required
+ *       if user is to be able to sort on this column).
+ *     - "sort": A default sort order for this column ("asc" or "desc"). Only
+ *       one column should be given a default sort order because table sorting
+ *       only applies to one column at a time.
+ *     - Any HTML attributes, such as "colspan", to apply to the column header
+ *       cell.
+ *   - rows: An array of table rows. Every row is an array of cells, or an
+ *     associative array with the following keys:
+ *     - "data": an array of cells
+ *     - Any HTML attributes, such as "class", to apply to the table row.
+ *     - "no_striping": a boolean indicating that the row should receive no
+ *       'even / odd' styling. Defaults to FALSE.
+ *     Each cell can be either a string or an associative array with the
+ *     following keys:
+ *     - "data": The string to display in the table cell.
+ *     - "header": Indicates this cell is a header.
+ *     - Any HTML attributes, such as "colspan", to apply to the table cell.
+ *     Here's an example for $rows:.
+ *
+ * @code
+ *     $rows = array(
+ *       // Simple row
+ *       array(
+ *         'Cell 1', 'Cell 2', 'Cell 3'
+ *       ),
+ *       // Row with attributes on the row and some of its cells.
+ *       array(
+ *         'data' => array('Cell 1', array('data' => 'Cell 2', 'colspan' => 2)), 'class' => array('funky')
+ *       )
+ *     );
+ * @endcode
+ *   - attributes: An array of HTML attributes to apply to the table tag.
+ *   - caption: A localized string to use for the <caption> tag.
+ *   - colgroups: An array of column groups. Each element of the array can be
+ *     either:
+ *     - An array of columns, each of which is an associative array of HTML
+ *       attributes applied to the COL element.
+ *     - An array of attributes applied to the COLGROUP element, which must
+ *       include a "data" attribute. To add attributes to COL elements, set the
+ *       "data" attribute with an array of columns, each of which is an
+ *       associative array of HTML attributes.
+ *     Here's an example for $colgroup:
+ * @code
+ *     $colgroup = array(
+ *       // COLGROUP with one COL element.
+ *       array(
+ *         array(
+ *           'class' => array('funky'), // Attribute for the COL element.
+ *         ),
+ *       ),
+ *       // Colgroup with attributes and inner COL elements.
+ *       array(
+ *         'data' => array(
+ *           array(
+ *             'class' => array('funky'), // Attribute for the COL element.
+ *           ),
+ *         ),
+ *         'class' => array('jazzy'), // Attribute for the COLGROUP element.
+ *       ),
+ *     );
+ * @endcode
+ *     These optional tags are used to group and set properties on columns
+ *     within a table. For example, one may easily group three columns and
+ *     apply same background style to all.
+ *   - sticky: Use a "sticky" table header.
+ *   - empty: The message to display in an extra row if table does not have any
+ *     rows.
+ */
+function theme_tablefield($variables) {
+  $header = $variables['header'];
+  $rows = $variables['rows'];
+  $attributes = $variables['attributes'];
+  $caption = $variables['caption'];
+  $colgroups = $variables['colgroups'];
+  $header_orientation = $variables['header_orientation'];
+  $sticky = $variables['sticky'];
+  $empty = $variables['empty'];
+  // If the only header is the first column make the first row a normal row.
+  if (!isset($rows['row_0']) && $header_orientation == 'Vertical') {
+    $rows['row_0'] = $header;
+    ksort($rows);
+    $header = array();
+  }
+  // Add sticky headers, if applicable.
+  if (count($header) && $sticky) {
+    drupal_add_js('misc/tableheader.js');
+    // Add 'sticky-enabled' class to the table to identify it for JS.
+    // This is needed to target tables constructed by this function.
+    $attributes['class'][] = 'sticky-enabled';
+  }
+
+  $output = '<table' . drupal_attributes($attributes) . ">\n";
+
+  if (isset($caption)) {
+    $output .= '<caption>' . $caption . "</caption>\n";
+  }
+
+  // Format the table columns:
+  if (count($colgroups)) {
+    foreach ($colgroups as $number => $colgroup) {
+      $attributes = array();
+
+      // Check if we're dealing with a simple or complex column.
+      if (isset($colgroup['data'])) {
+        foreach ($colgroup as $key => $value) {
+          if ($key == 'data') {
+            $cols = $value;
+          }
+          else {
+            $attributes[$key] = $value;
+          }
+        }
+      }
+      else {
+        $cols = $colgroup;
+      }
+
+      // Build colgroup.
+      if (is_array($cols) && count($cols)) {
+        $output .= ' <colgroup' . drupal_attributes($attributes) . '>';
+        $i = 0;
+        foreach ($cols as $col) {
+          $output .= ' <col' . drupal_attributes($col) . ' />';
+        }
+        $output .= " </colgroup>\n";
+      }
+      else {
+        $output .= ' <colgroup' . drupal_attributes($attributes) . " />\n";
+      }
+    }
+  }
+
+  // Add the 'empty' row message if available.
+  if (!count($rows) && $empty) {
+    $header_count = 0;
+    foreach ($header as $header_cell) {
+      if (is_array($header_cell)) {
+        $header_count += isset($header_cell['colspan']) ? $header_cell['colspan'] : 1;
+      }
+      else {
+        $header_count++;
+      }
+    }
+    $rows[] = array(
+      array(
+        'data' => $empty,
+        'colspan' => $header_count,
+        'class' => array('empty', 'message'),
+      ),
+    );
+  }
+
+  // Format the table header:
+  if (count($header)) {
+    $ts = tablesort_init($header);
+    // HTML requires that the thead tag has tr tags in it followed by tbody
+    // tags. Using ternary operator to check and see if we have any rows.
+    $output .= (count($rows) ? ' <thead><tr>' : ' <tr>');
+    foreach ($header as $cell) {
+      $cell = tablesort_header($cell, $header, $ts);
+      $output .= _theme_table_cell($cell, TRUE);
+    }
+    // Using ternary operator to close the tags based on whether or not there
+    // are rows.
+    $output .= (count($rows) ? " </tr></thead>\n" : "</tr>\n");
+  }
+  else {
+    $ts = array();
+  }
+
+  // Format the table rows:
+  if (count($rows)) {
+    $output .= "<tbody>\n";
+    $flip = array('even' => 'odd', 'odd' => 'even');
+    $class = 'even';
+    foreach ($rows as $number => $row) {
+      // Check if we're dealing with a simple or complex row.
+      if (isset($row['data'])) {
+        $cells = $row['data'];
+        $no_striping = isset($row['no_striping']) ? $row['no_striping'] : FALSE;
+
+        // Set the attributes array and exclude 'data' and 'no_striping'.
+        $attributes = $row;
+        unset($attributes['data']);
+        unset($attributes['no_striping']);
+      }
+      else {
+        $cells = $row;
+        $attributes = array();
+        $no_striping = FALSE;
+      }
+      if (count($cells)) {
+        // Add odd/even class.
+        if (!$no_striping) {
+          $class = $flip[$class];
+          $attributes['class'][] = $class;
+        }
+
+        // Build row.
+        $output .= ' <tr' . drupal_attributes($attributes) . '>';
+        $i = 0;
+        foreach ($cells as $cell) {
+          $cell = tablesort_cell($cell, $header, $ts, $i++);
+          $output .= _theme_table_cell($cell, ($header_orientation === 'Both' || $header_orientation === 'Vertical') && $i == 1);
+          $i++;
+        }
+        $output .= " </tr>\n";
+      }
+    }
+    $output .= "</tbody>\n";
+  }
+
+  $output .= "</table>\n";
+  return $output;
 }

@@ -25,9 +25,6 @@
   overflow: hidden;
   width: 98%;
 }
-.form-tablefield input.tablefield-row-0 {
-  font-weight: bold;
-}
 .table-no-headers input.tablefield-row-0 {
   font-weight: normal!important;
 }
