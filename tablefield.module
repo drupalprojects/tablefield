@@ -196,32 +196,36 @@ function tablefield_get_table_value($data, array $options, $name, $type, $info) 
 }
 
 /**
- * Implements hook_field_settings_form().
+ * Implements hook_field_widget_settings_form().
  */
-function tablefield_field_settings_form($field, $instance, $has_data) {
+function tablefield_field_widget_settings_form($field, $instance) {
   $form = array();
   $form['restrict_rebuild'] = array(
     '#type' => 'checkbox',
     '#title' => t('Restrict rebuilding to users with the permission "rebuild tablefield"'),
-    '#default_value' => isset($field['settings']['restrict_rebuild']) ? $field['settings']['restrict_rebuild'] : FALSE,
+    '#default_value' => isset($instance['widget']['settings']['restrict_rebuild']) ? $instance['widget']['settings']['restrict_rebuild'] : FALSE,
+    '#weight' => 100,
   );
   $form['lock_values'] = array(
     '#type' => 'checkbox',
     '#title' => t('Lock table header so default values cannot be changed.'),
-    '#default_value' => isset($field['settings']['lock_values']) ? $field['settings']['lock_values'] : FALSE,
+    '#default_value' => isset($instance['widget']['settings']['lock_values']) ? $instance['widget']['settings']['lock_values'] : FALSE,
+    '#weight' => 101,
   );
   $form['cell_processing'] = array(
     '#type' => 'radios',
     '#title' => t('Table cell processing'),
-    '#default_value' => isset($field['settings']['cell_processing']) ? $field['settings']['cell_processing'] : 0,
+    '#default_value' => isset($instance['widget']['settings']['cell_processing']) ? $instance['widget']['settings']['cell_processing'] : 0,
     '#options' => array(
       t('Plain text'),
       t('Filtered text (user selects input format)'),
     ),
+    '#weight' => 102,
   );
   $form['default_message'] = array(
     '#type' => 'markup',
     '#value' => t('To specify a default table, use the &quot;Default Value&quot; above. There you can specify a default number of rows/columns and values.'),
+    '#weight' => 103,
   );
 
   return $form;
@@ -812,6 +816,9 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   $settings = isset($instance['display']['default']['settings']) ? $instance['display']['default']['settings'] : FALSE;
   $element['#type'] = 'tablefield';
   $form['#attributes']['enctype'] = 'multipart/form-data';
+  if ($settings) {
+    $hide_header = isset($settings['hide_header']) ? $settings['hide_header'] : FALSE;
+  }
   $header_orientation = isset($settings['header_orientation']) ? $settings['header_orientation'] : 'Horizontal';
   switch ($header_orientation) {
     case 'Both':
@@ -920,7 +927,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
           'title' => t('Manage display settings'),
         ),
       ));
-      if (isset($settings['hide_header']) && $settings['hide_header'] == TRUE) {
+      if ($hide_header == TRUE) {
         $help_text = t('This table will not have a header according to the !display_settings.', array('!display_settings' => $display_settings));
       }
       else {
@@ -943,7 +950,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#suffix' => '</div>',
   );
   if ($settings) {
-    if (isset($settings['hide_header']) && $settings['hide_header']) {
+    if ($hide_header) {
       $element['tablefield']['#attributes']['class'][] = 'table-no-headers';
     }
   }
@@ -959,7 +966,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   if ($arg0 == 'admin') {
     $element['tablefield']['#description'] = t('This form defines the table field defaults, but the number of rows/columns and content can be overridden.');
     if ($settings) {
-      if (!$settings['hide_header']) {
+      if (!$hide_header) {
         $element['tablefield']['#description'] .= ' ' . t('The first row will appear as the table header. Leave the first row blank if you do not need a header.');
       }
     }
@@ -981,7 +988,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     // Loop over all the columns.
     for ($ii = 0; $ii < $count_cols; $ii++) {
       $instance_default = isset($instance['default_value'][0]['tablefield']['tabledata']["row_{$i}"]["col_{$ii}"]) ? $instance['default_value'][0]['tablefield']['tabledata']["row_{$i}"]["col_{$ii}"] : array();
-      if (!empty($instance_default) && !empty($field['settings']['lock_values']) && $arg0 != 'admin') {
+      if (!empty($instance_default) && !empty($instance['widget']['settings']['lock_values']) && $arg0 != 'admin') {
         // The value still needs to be send on every load in order for the
         // table to be saved correctly.
         $element['tablefield']['tabledata']['row_' . $i]['col_' . $ii] = array(
@@ -1051,7 +1058,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
 
   // If the user doesn't have rebuild perms, we pass along the data as a value.
   // Otherwise we provide form elements to specify the size and ajax rebuild.
-  if (isset($field['settings']['restrict_rebuild']) && $field['settings']['restrict_rebuild'] && !user_access('rebuild tablefield')) {
+  if (isset($instance['widget']['settings']['restrict_rebuild']) && $instance['widget']['settings']['restrict_rebuild'] && !user_access('rebuild tablefield')) {
     $element['tablefield']['rebuild'] = array(
       '#type' => 'value',
       '#tree' => TRUE,
@@ -1190,7 +1197,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   );
 
   // Allow the user to select input filters.
-  if (!empty($field['settings']['cell_processing'])) {
+  if (!empty($instance['widget']['settings']['cell_processing'])) {
     $element['#base_type'] = $element['#type'];
     $element['#type'] = 'text_format';
     $element['#format'] = isset($items[$delta]['format']) ? $items[$delta]['format'] : NULL;

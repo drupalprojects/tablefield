@@ -351,3 +351,53 @@ function tablefield_update_7005() {
   field_cache_clear();
   drupal_set_message(t('All empty multi-value TableField fields with locked values are now removed.'), 'warning');
 }
+
+/**
+ * Convert field settings to widget settings.
+ */
+function tablefield_update_7006() {
+  $instances = field_info_instances();
+  foreach ($instances as $entity_type => $entities) {
+    foreach ($entities as $bundle => $fields) {
+      foreach ($fields as $field_name => $instance) {
+        $field_info = field_info_field($field_name);
+        if (in_array($instance['widget']['type'], array('tablefield'))) {
+          // Convert the entity properties.
+          foreach ($instance['display'] as $view_mode => $occurrence) {
+            $instance['widget']['settings']['restrict_rebuild'] = $field_info['settings']['restrict_rebuild'] ? 1 : 0;
+            $instance['widget']['settings']['lock_values'] = $field_info['settings']['lock_values'] ? 1 : 0;
+            $instance['widget']['settings']['cell_processing'] = $field_info['settings']['cell_processing'] ? 1 : 0;
+          }
+          field_update_instance($instance);
+        }
+      }
+    }
+  }
+  $norepeat = array();
+  foreach ($instances as $entity_type => $entities) {
+    foreach ($entities as $bundle => $fields) {
+      foreach ($fields as $field_name => $instance) {
+        $field_info = field_info_field($field_name);
+        if (in_array($instance['widget']['type'], array('tablefield')) && !in_array($field_info['id'], $norepeat)) {
+          // Remove the now unused field settings values. We can not use
+          // field_update_field($field) as there is data in the field thus the
+          // field's storage module forbids an update.
+          $update = array();
+          $data = db_query("SELECT data FROM {field_config} WHERE id = :id", array(':id' => $field_info['id']))->fetchField();
+          $data = unserialize($data);
+          $data['settings'] = array();
+          $update['data'] = serialize($data);
+          if ($update) {
+            $query = db_update('field_config')
+              ->condition('id', $field_info['id'])
+              ->fields($update)
+              ->execute();
+          }
+          $norepeat[] = $field_info['id'];
+        }
+      }
+    }
+  }
+  field_cache_clear();
+  drupal_set_message(t('All Table Field fields have their field settings converted to widget settings.'), 'warning');
+}
