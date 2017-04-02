@@ -1661,6 +1661,33 @@ function tablefield_multiple_field_remove_button_field_widgets_alter(&$fieldwidg
 }
 
 /**
+ * Implements hook_form_alter().
+ *
+ * Avoid empty tables on multivalue fields with default header values.
+ */
+function tablefield_form_alter(&$form, &$form_state, $form_id) {
+  $instances = field_info_instances();
+  $field_names = array();
+  foreach ($instances as $entity_type => $entities) {
+    foreach ($entities as $bundle => $fields) {
+      foreach ($fields as $field_name => $instance) {
+        if ($instance['widget']['type'] === 'tablefield') {
+          $field_info = field_info_field($field_name);
+          if (empty($field_info['field_name'])) {
+            return;
+          }
+          if (isset($form[$field_info['field_name']]) && $field_info['cardinality'] != 1) {
+            $field_language = $form[$field_info['field_name']]['#language'];
+            $max_delta = $form[$field_info['field_name']][$field_language]['#max_delta'];
+            unset($form[$field_name][$field_language][$max_delta]);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
  * Returns HTML for a table. Based on the core function theme_table().
  *
  * @param array $variables
