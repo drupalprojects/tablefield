@@ -380,8 +380,9 @@ function tablefield_field_formatter_info() {
       'field types' => array('tablefield'),
       'settings' => array(
         'usearraykeys' => 'No',
+        'rowkey' => FALSE,
         'vertheader' => FALSE,
-        'tabledataonly' => FALSE,
+        'tabledataonly' => TRUE,
       ),
     ),
   );
@@ -396,7 +397,13 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
   $summary = array();
   switch ($display['type']) {
     case 'format_raw':
-      $summary[] = t('Use first row/column values as array keys (if not empty): %tr', array('%tr' => $settings['usearraykeys']));
+      $summary[] = t('Use first row/column values as keys (if not empty): %tr', array('%tr' => $settings['usearraykeys']));
+      if ($settings['usearraykeys'] === 'Both') {
+        $summary[] = t('Row identifier key: %tr', array('%tr' => t('Disabled')));
+      }
+      else {
+        $summary[] = t('Row identifier key: %tr', array('%tr' => $settings['rowkey'] ? t('Yes') : t('No')));
+      }
       $summary[] = t('Vertical header (first column instead of first row): %tr', array('%tr' => $settings['vertheader'] ? t('Yes') : t('No')));
       $summary[] = t('Table data only (no caption): %tr', array('%tr' => ($settings['tabledataonly']) ? t('Yes') : t('No')));
       break;
@@ -437,7 +444,7 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
     case 'format_raw':
       $element['usearraykeys'] = array(
         '#type' => 'select',
-        '#title' => t('Use first row/column values as array keys (if not empty)'),
+        '#title' => t('Use first row/column values as keys (if not empty)'),
         '#options' => array(
           'No' => t('No'),
           'Header' => t('Header only'),
@@ -445,6 +452,15 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
         ),
         '#default_value' => $settings['usearraykeys'],
       );
+      $element['rowkey'] = array(
+        '#title' => t('Row identifier key'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['rowkey'],
+      );
+      if ($settings['usearraykeys'] === 'Both') {
+        $element['rowkey']['#disabled'] = TRUE;
+        $element['rowkey']['#title'] = '<span class="grayed-out">' . t('Row identifier key') . '</span> | ' . t("Disabled because above the first column values are set to be used as row identifiers.");
+      }
       $element['vertheader'] = array(
         '#title' => t('Vertical header (first column instead of first row)'),
         '#type' => 'checkbox',
@@ -534,15 +550,11 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
   $element = array();
   $settings = $display['settings'];
   $formatter = $display['type'];
-  $prettyprint = FALSE;
   if (!empty($items)) {
-    $i = 0;
-    $len = count($items);
-    foreach ($items as $delta => $table) {
-      // If we are not on the last iteration of the loop use a separator.
-      $separator = ($i == $len - 1) ? '' : ',';
-      switch ($display['type']) {
-        case 'format_raw':
+    switch ($display['type']) {
+      case 'format_raw':
+        $values = array();
+        foreach ($items as $delta => $table) {
           $value = unserialize($table['value']);
           // Swap rows and columns if the header is vertical (first column).
           if ($settings['vertheader']) {
@@ -562,6 +574,9 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
           unset($value['rebuild']);
           unset($value['import']);
           unset($value['paste']);
+          // DEVELOPERS! Extra future data should be captured and unset below.
+          $caption = $value['caption'];
+          unset($value['caption']);
           if ($settings['usearraykeys'] === 'Header' || $settings['usearraykeys'] === 'Both') {
             // Keep first row values (header) to use for array keys later.
             $keys = $value['tabledata']['row_0'];
@@ -616,27 +631,57 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
               $value['tabledata'][$key] = $row;
             }
           }
-          // DEVELOPERS! Extra future data should be unset below (e.g. title).
+          // For a row identifier key to be retained we need to insert a
+          // numeric index key for each row.
+          if ($settings['usearraykeys'] === 'Both' || $settings['rowkey']) {
+            $i = 0;
+            foreach ($value as $key => $val) {
+              $value[$i][$key] = $val;
+              // Remove original key. We'll get it back with array_values().
+              unset($value[$key]);
+              $i++;
+            }
+          }
           if ($settings['tabledataonly']) {
-            unset($value['caption']);
             $value = reset($value);
           }
-          // Assign the markup showing pretty print on node pages.
-          if (menu_get_object()) {
-            $prettyprint = TRUE;
-            $element[$delta] = array(
-              '#markup' => str_replace(array("\r", "\n", "\t"), "<br />", json_encode($value, JSON_PRETTY_PRINT)) . $separator,
-            );
-          }
-          // And raw on other pages.
           else {
-            $element[$delta] = array(
-              '#markup' => drupal_json_encode($value) . $separator,
-            );
+            // DEVELOPERS! Extra future data should be unset below (e.g. title).
+            $value['caption'] = $caption;
           }
-          break;
+          // Add the table to the final output.
+          if ($settings['tabledataonly']) {
+            krsort($value);
+            array_push($values, array_values($value));
+          }
+          else {
+            $value['tabledata'] = $settings['usearraykeys'] === 'Both' || $settings['rowkey'] ? $value[0]['tabledata'] : array_values($value['tabledata']);
+            unset($value[0]);
+            krsort($value);
+            array_push($values, $value);
+          }
+        }
+        // Serve pretty print with a fixed-width font and preserve spaces and
+        // line breaks.
+        // Show pretty print on node pages and raw on other pages.
+        $prettyprint = (menu_get_object()) ? JSON_PRETTY_PRINT : NULL;
+        if ($prettyprint) {
+          $element['#prefix'] = '<pre>';
+          $element['#suffix'] = '</pre>';
+        }
+        // Avoid a wrapping array if we have a single table (not multi-value).
+        if (!(count($values) - 1)) {
+          $values = array_shift($values);
+        }
+        // Render multiple values as one to ensure valid JSON (e.g. seperator).
+        $element[0] = array(
+          // See http://php.net/manual/en/json.constants.php#119565.
+          '#markup' => json_encode($values, $prettyprint | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK),
+        );
+        break;
 
-        default:
+      default:
+        foreach ($items as $delta => $table) {
           // Check for table caption.
           $raw = unserialize($table['value']);
           $caption = isset($raw['caption']) ? check_plain($raw['caption']) : '';
@@ -737,13 +782,8 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
               '#formatter' => $formatter,
             );
           }
-      }
-      $i++;
+        }
     }
-  }
-  if ($prettyprint) {
-    $element['#prefix'] = '<pre>';
-    $element['#suffix'] = '</pre>';
   }
   return $element;
 }
@@ -880,7 +920,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
           'title' => t('Manage display settings'),
         ),
       ));
-      if ($settings['hide_header'] == TRUE) {
+      if (isset($settings['hide_header']) && $settings['hide_header'] == TRUE) {
         $help_text = t('This table will not have a header according to the !display_settings.', array('!display_settings' => $display_settings));
       }
       else {
@@ -903,7 +943,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#suffix' => '</div>',
   );
   if ($settings) {
-    if ($settings['hide_header']) {
+    if (isset($settings['hide_header']) && $settings['hide_header']) {
       $element['tablefield']['#attributes']['class'][] = 'table-no-headers';
     }
   }
