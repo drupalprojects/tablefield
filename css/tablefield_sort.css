@@ -1,0 +1,24 @@
+/**
+ * @file
+ * Sorting indicator (arrow up/down).
+ */
+.headerSortDown:after,
+.headerSortUp:after {
+  content: ' ';
+  position: relative;
+  left: 10px;
+  border: 7px solid transparent;
+}
+.headerSortDown:after {
+  top: 10px;
+  border-top-color: silver;
+}
+.headerSortUp:after {
+  bottom: 15px;
+  border-bottom-color: silver;
+}
+.headerSortDown,
+.headerSortUp {
+  padding-left: 20px;
+  opacity: 0.8;
+}

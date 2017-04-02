@@ -371,6 +371,7 @@ function tablefield_field_formatter_info() {
       'settings' => array(
         'header_orientation' => 'Horizontal',
         'sticky_header' => TRUE,
+        'sortable' => FALSE,
         'hide_header' => FALSE,
         'hide_empty_rows' => FALSE,
         'hide_empty_cols' => FALSE,
@@ -420,6 +421,12 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
       }
       else {
         $summary[] = t('Sticky header: %tr', array('%tr' => ($settings['sticky_header']) ? t('Yes') : t('No')));
+      }
+      if (!module_exists('tablesorter')) {
+        $summary[] = t('Sortable: %tr', array('%tr' => t('Disabled')));
+      }
+      else {
+        $summary[] = t('Sortable: %tr', array('%tr' => ($settings['sortable']) ? t('Yes') : t('No')));
       }
       $summary[] = t('Hide first row: %tr', array('%tr' => ($settings['hide_header']) ? t('Yes') : t('No')));
       $summary[] = t('Hide empty columns ignoring column header: %tr', array('%tr' => ($settings['hide_cols_skip_head']) ? t('Yes') : t('No')));
@@ -497,6 +504,21 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
       if ($settings['header_orientation'] === 'Vertical') {
         $element['sticky_header']['#disabled'] = TRUE;
         $element['sticky_header']['#title'] = '<span class="grayed-out">' . t('Sticky header') . '</span> | ' . t("Disabled because above only the first column is set as header.");
+      }
+      $element['sortable'] = array(
+        '#title' => t('Sortable'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['sortable'],
+      );
+      $tablesorter_module = l(t('Tablesorter module'), 'https://drupal.org/project/tablesorter', array(
+        'attributes' => array(
+          'title' => t('Tablesorter | Drupal.org'),
+          'target' => '_blank',
+        ),
+      ));
+      if (!module_exists('tablesorter')) {
+        $element['sortable']['#disabled'] = TRUE;
+        $element['sortable']['#title'] = '<span class="grayed-out">' . t('Sortable') . '</span> | ' . t("Disabled until the !tablesorter_module gets enabled.", array('!tablesorter_module' => $tablesorter_module));
       }
       $element['hide_header'] = array(
         '#title' => t('Hide first row'),
@@ -769,13 +791,10 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
             // Theme the table for display.
             $element[$delta] = array(
               '#theme' => 'tablefield_view',
-              '#attributes' => array(
-                'id' => drupal_html_id('tablefield-' . $delta),
-                'class' => array('tablefield'),
-              ),
               '#caption' => $caption,
               '#header_orientation' => isset($settings['header_orientation']) ? $settings['header_orientation'] : 'Horizontal',
               '#sticky' => isset($settings['sticky_header']) ? $settings['sticky_header'] : NULL,
+              '#sortable' => isset($settings['sortable']) ? $settings['sortable'] : NULL,
               '#header' => $header,
               '#rows' => $tabledata,
               '#delta' => $delta,
@@ -1431,6 +1450,7 @@ function tablefield_theme() {
         'formatter' => NULL,
         'header_orientation' => 'Horizontal',
         'sticky' => NULL,
+        'sortable' => NULL,
         'attributes' => array(),
       ),
     ),
@@ -1442,6 +1462,7 @@ function tablefield_theme() {
         'colgroups' => array(),
         'header_orientation' => 'Horizontal',
         'sticky' => NULL,
+        'sortable' => NULL,
         'empty' => NULL,
       ),
     ),
@@ -1452,9 +1473,10 @@ function tablefield_theme() {
  * Theme function for table view.
  */
 function theme_tablefield_view($variables) {
-  $attributes = $variables['attributes'] + array(
-    'id' => drupal_html_id('tablefield-' . $variables['delta']),
-    'class' => array('tablefield', 'tablefield-' . $variables['delta']),
+  $sortable = $variables['sortable'] ? 'tablesorter' : NULL;
+  $attributes = array(
+    'id' => 'tablefield-' . $variables['delta'],
+    'class' => array('tablefield', $sortable),
   );
 
   // Apply scope property to headers for accessibility.
@@ -1487,6 +1509,9 @@ function theme_tablefield_view($variables) {
   }
   if (isset($variables['sticky'])) {
     $theme_variables['sticky'] = $variables['sticky'];
+  }
+  if (isset($variables['sortable'])) {
+    $theme_variables['sortable'] = $variables['sortable'];
   }
   return '<div id="' . drupal_html_id('tablefield-wrapper-' . $variables['delta']) . '" class="tablefield-wrapper">'
     . theme('tablefield', $theme_variables)
@@ -1784,7 +1809,9 @@ function tablefield_form_alter(&$form, &$form_state, $form_id) {
  *     These optional tags are used to group and set properties on columns
  *     within a table. For example, one may easily group three columns and
  *     apply same background style to all.
+ *   - header_orientation: Horizontal, vertical or both.
  *   - sticky: Use a "sticky" table header.
+ *   - sortable: Allow column sorting by clicking the column in the  first row.
  *   - empty: The message to display in an extra row if table does not have any
  *     rows.
  */
@@ -1797,6 +1824,16 @@ function theme_tablefield($variables) {
   $header_orientation = $variables['header_orientation'];
   $sticky = $variables['sticky'];
   $empty = $variables['empty'];
+  if ($variables['sortable']) {
+    drupal_add_css(drupal_get_path('module', 'tablefield') . '/css/tablefield_sort.css');
+    $tooltip = ' a="" title="' . t('Sort column') . '"';
+    $pointer = ' onclick="" style="cursor: pointer;"';
+  }
+  else {
+    $tooltip = NULL;
+    $pointer = NULL;
+  }
+  drupal_add_css(drupal_get_path('module', 'tablefield') . '/css/tablefield_sort.css');  $empty = $variables['empty'];
   // If the only header is the first column make the first row a normal row.
   if (!isset($rows['row_0']) && $header_orientation == 'Vertical') {
     $rows['row_0'] = $header;
@@ -1877,7 +1914,7 @@ function theme_tablefield($variables) {
     $ts = tablesort_init($header);
     // HTML requires that the thead tag has tr tags in it followed by tbody
     // tags. Using ternary operator to check and see if we have any rows.
-    $output .= (count($rows) ? ' <thead><tr>' : ' <tr>');
+    $output .= (count($rows) ? ' <thead' . $tooltip . '><tr' . $pointer . '>' : ' <tr>');
     foreach ($header as $cell) {
       $cell = tablesort_header($cell, $header, $ts);
       $output .= _theme_table_cell($cell, TRUE);
