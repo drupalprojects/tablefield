@@ -689,7 +689,6 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
           }
           // Add the table to the final output.
           if ($settings['tabledataonly']) {
-            krsort($value);
             array_push($values, array_values($value));
           }
           else {
