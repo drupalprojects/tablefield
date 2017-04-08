@@ -389,6 +389,7 @@ function tablefield_field_formatter_info() {
         'rowkey' => FALSE,
         'vertheader' => FALSE,
         'tabledataonly' => TRUE,
+        'numeric_check' => TRUE,
       ),
     ),
   );
@@ -412,6 +413,7 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
       }
       $summary[] = t('Vertical header (first column instead of first row): %tr', array('%tr' => $settings['vertheader'] ? t('Yes') : t('No')));
       $summary[] = t('Table data only (no caption): %tr', array('%tr' => ($settings['tabledataonly']) ? t('Yes') : t('No')));
+      $summary[] = t('Encode numeric strings as numbers: %tr', array('%tr' => ($settings['numeric_check']) ? t('Yes') : t('No')));
       break;
 
     default:
@@ -482,6 +484,11 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
         '#title' => t('Table data only (no caption)'),
         '#type' => 'checkbox',
         '#default_value' => $settings['tabledataonly'],
+      );
+      $element['numeric_check'] = array(
+        '#title' => t('Encode numeric strings as numbers'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['numeric_check'],
       );
       break;
 
@@ -700,6 +707,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
           $element['#prefix'] = '<pre>';
           $element['#suffix'] = '</pre>';
         }
+        $numeric_check = $settings['numeric_check'] ? JSON_NUMERIC_CHECK : NULL;
         // Avoid a wrapping array if we have a single table (not multi-value).
         if (!(count($values) - 1)) {
           $values = array_shift($values);
@@ -707,7 +715,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
         // Render multiple values as one to ensure valid JSON (e.g. seperator).
         $element[0] = array(
           // See http://php.net/manual/en/json.constants.php#119565.
-          '#markup' => json_encode($values, $prettyprint | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK),
+          '#markup' => json_encode($values, $prettyprint | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | $numeric_check),
         );
         break;
 
