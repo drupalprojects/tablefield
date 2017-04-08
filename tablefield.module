@@ -422,7 +422,7 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
       else {
         $summary[] = t('Sticky header: %tr', array('%tr' => ($settings['sticky_header']) ? t('Yes') : t('No')));
       }
-      if (!module_exists('tablesorter')) {
+      if (!module_exists('tablesorter') || $settings['header_orientation'] === 'Vertical') {
         $summary[] = t('Sortable: %tr', array('%tr' => t('Disabled')));
       }
       else {
@@ -519,6 +519,10 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
       if (!module_exists('tablesorter')) {
         $element['sortable']['#disabled'] = TRUE;
         $element['sortable']['#title'] = '<span class="grayed-out">' . t('Sortable') . '</span> | ' . t("Disabled until the !tablesorter_module gets enabled.", array('!tablesorter_module' => $tablesorter_module));
+      }
+      elseif ($settings['header_orientation'] === 'Vertical') {
+        $element['sortable']['#disabled'] = TRUE;
+        $element['sortable']['#title'] = '<span class="grayed-out">' . t('Sortable') . '</span> | ' . t("Disabled because the header orientation is only 'Vertical'.", array('!tablesorter_module' => $tablesorter_module));
       }
       $element['hide_header'] = array(
         '#title' => t('Hide first row'),
@@ -1827,12 +1831,10 @@ function theme_tablefield($variables) {
   $empty = $variables['empty'];
   if ($variables['sortable']) {
     drupal_add_css(drupal_get_path('module', 'tablefield') . '/css/tablefield_sort.css');
-    $tooltip = ' a="" title="' . t('Sort column') . '"';
-    $pointer = ' onclick="" style="cursor: pointer;"';
+    $tooltip = ' title="' . t('Sort column') . '"';
   }
   else {
     $tooltip = NULL;
-    $pointer = NULL;
   }
   drupal_add_css(drupal_get_path('module', 'tablefield') . '/css/tablefield_sort.css');  $empty = $variables['empty'];
   // If the only header is the first column make the first row a normal row.
@@ -1915,7 +1917,7 @@ function theme_tablefield($variables) {
     $ts = tablesort_init($header);
     // HTML requires that the thead tag has tr tags in it followed by tbody
     // tags. Using ternary operator to check and see if we have any rows.
-    $output .= (count($rows) ? ' <thead' . $tooltip . '><tr' . $pointer . '>' : ' <tr>');
+    $output .= (count($rows) ? ' <thead' . $tooltip . '><tr>' : ' <tr>');
     foreach ($header as $cell) {
       $cell = tablesort_header($cell, $header, $ts);
       $output .= _theme_table_cell($cell, TRUE);

@@ -2,6 +2,9 @@
  * @file
  * Sorting indicator (arrow up/down).
  */
+.tablesorter thead {
+  cursor: pointer;
+}
 .headerSortDown:after,
 .headerSortUp:after {
   content: ' ';
