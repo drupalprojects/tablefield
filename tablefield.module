@@ -414,7 +414,12 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
       }
       $summary[] = t('Vertical header (first column instead of first row): %tr', array('%tr' => $settings['vertheader'] ? t('Yes') : t('No')));
       $summary[] = t('Table data only (no caption): %tr', array('%tr' => ($settings['tabledataonly']) ? t('Yes') : t('No')));
-      $summary[] = t('Encode numeric strings as numbers: %tr', array('%tr' => ($settings['numeric_check']) ? t('Yes') : t('No')));
+      if ($settings['xml']) {
+        $summary[] = t('Encode numeric strings as numbers: %tr', array('%tr' => t('Disabled')));
+      }
+      else {
+        $summary[] = t('Encode numeric strings as numbers: %tr', array('%tr' => ($settings['numeric_check']) ? t('Yes') : t('No')));
+      }
       $summary[] = t('XML instead of JSON: %tr', array('%tr' => ($settings['xml']) ? t('Yes') : t('No')));
       break;
 
@@ -492,6 +497,10 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
         '#type' => 'checkbox',
         '#default_value' => $settings['numeric_check'],
       );
+      if ($settings['xml']) {
+        $element['numeric_check']['#disabled'] = TRUE;
+        $element['numeric_check']['#title'] = '<span class="grayed-out">' . t('Encode numeric strings as numbers') . '</span> | ' . t("Disabled because below XML is set that does not use quotes around any values.");
+      }
       $element['xml'] = array(
         '#title' => t('XML instead of JSON'),
         '#type' => 'checkbox',
