@@ -2025,14 +2025,19 @@ function array_to_xml($data, &$xml_data) {
   foreach ($data as $key => $value) {
     if (is_numeric($key)) {
       // Dealing with <0/>..<n/> issues.
-      $key = 'item' . $key;
+      $key = 'table_' . $key;
     }
+    // Replace invalid characters in the <element> with an underscore.
+    $key = preg_replace('/_+/', '_', trim(str_replace(array(' ', '<', '>', '&', '\'', '"', '/'), '_', $key), '_'));
+    // If the <3element> starts with a number, prefix it with an underscore
+    // <_3element> to get valid XML.
+    $key = is_numeric(substr($key, 0, 1)) ? substr_replace($key, '_', 0, 0) : $key;
     if (is_array($value)) {
-      $subnode = $xml_data->addChild(htmlspecialchars($key));
+      $subnode = $xml_data->addChild($key);
       array_to_xml($value, $subnode);
     }
     else {
-      $xml_data->addChild(htmlspecialchars("$key"), htmlspecialchars("$value"));
+      $xml_data->addChild("$key", htmlspecialchars("$value"));
     }
   }
 }
