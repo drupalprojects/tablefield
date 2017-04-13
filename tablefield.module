@@ -212,7 +212,18 @@ function tablefield_field_widget_settings_form($field, $instance) {
     '#title' => t('Lock cells with default values'),
     '#description' => t('Avoid headers being changed by content editors.'),
     '#default_value' => isset($instance['widget']['settings']['lock_values']) ? $instance['widget']['settings']['lock_values'] : FALSE,
-    '#weight' => 101,
+    '#weight' => 110,
+  );
+  $form['input_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Input type'),
+    '#default_value' => isset($instance['widget']['settings']['input_type']) ? $instance['widget']['settings']['input_type'] : 'textfield',
+    '#required' => TRUE,
+    '#options' => array(
+      'textfield' => t('textfield'),
+      'textarea' => t('textarea'),
+    ),
+    '#weight' => 120,
   );
   $form['cell_processing'] = array(
     '#type' => 'radios',
@@ -222,12 +233,12 @@ function tablefield_field_widget_settings_form($field, $instance) {
       t('Plain text'),
       t('Filtered text (user selects input format)'),
     ),
-    '#weight' => 102,
+    '#weight' => 130,
   );
   $form['default_message'] = array(
     '#type' => 'markup',
     '#value' => t('To specify a default table, use the &quot;Default Value&quot; above. There you can specify a default number of rows/columns and values.'),
-    '#weight' => 103,
+    '#weight' => 140,
   );
 
   return $form;
@@ -634,6 +645,10 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
           if ($settings['usearraykeys'] === 'Header' || $settings['usearraykeys'] === 'Both') {
             // Keep first row values (header) to use for array keys later.
             $keys = $value['tabledata']['row_0'];
+            // Remove linebreaks from array keys.
+            array_walk_recursive($keys, function (&$key) {
+                $key = str_replace(array("\r", "\n", "<br />"), '', $key);
+            });
             // If a header value is empty use the column key (col_#).
             foreach ($keys as $key => $content) {
               if (empty($content)) {
@@ -668,6 +683,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
                 $row = array_combine($keys, $row);
                 // If the first column value is empty use the row key (row_#).
                 $row_id = empty($row_ident) ? $key : $row_ident;
+                $row_id = str_replace(array("\r", "\n", "<br />"), '', $row_id);
                 // Warning about rows with duplicate names being suppressed.
                 if (isset($value['tabledata'][$row_id])) {
                   drupal_set_message(t('The row header "%row_id" appears multiple times in a table. In the JSON output only the last row with this key is used to avoid duplicate names.', array('%row_id' => $row_id)), 'warning', FALSE);
@@ -713,6 +729,14 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
             krsort($value);
             array_push($values, $value);
           }
+          // If the field is not plain text and a text area then remove
+          // linebreaks and convert special characters to HTML entities.
+          $format = isset($items[$delta]['format']) ? $items[$delta]['format'] : 'plain_text';
+          array_walk_recursive($values, function (&$value) use ($format) {
+            if ($format !== 'plain_text') {
+              $value = str_replace(array("\r", "\n"), '', htmlspecialchars($value, ENT_NOQUOTES, 'UTF-8'));
+            }
+          });
         }
         // Serve pretty print with a fixed-width font and preserve spaces and
         // line breaks.
@@ -875,7 +899,7 @@ function tablefield_field_widget_info() {
 }
 
 /**
- * Implements hook_widget_form().
+ * Implements hook_field_widget_form().
  */
 function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   $form['#after_build'][] = 'tablefield_after_build';
@@ -1078,9 +1102,20 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
         );
       }
       else {
+        $input_type = isset($instance['widget']['settings']['input_type']) ? $instance['widget']['settings']['input_type'] : 'textfield';
         $cell_default = isset($default_value['row_' . $i]['col_' . $ii]) ? $default_value['row_' . $i]['col_' . $ii] : '';
+        // If the field does not contain HTML, is not plain text and a text area
+        // then covert linebreaks to <br />.
+        $format = isset($items[$delta]['format']) ? $items[$delta]['format'] : 'plain_text';
+        if (!($cell_default != strip_tags($cell_default)) && $format !== 'plain_text') {
+          $nl2br = array('_cell_validate');
+        }
+        else {
+          $nl2br = NULL;
+        }
+
         $element['tablefield']['tabledata']['row_' . $i]['col_' . $ii] = array(
-          '#type' => 'textfield',
+          '#type' => $input_type,
           '#maxlength' => 2048,
           '#size' => 0,
           '#attributes' => array(
@@ -1091,6 +1126,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
           '#default_value' => $cell_default,
           '#prefix' => '<td class="col-' . $ii . '">',
           '#suffix' => '</td>',
+          '#element_validate' => $nl2br,
         );
       }
     }
@@ -1289,6 +1325,17 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   }
 
   return $element;
+}
+
+/**
+ * Custom callback for a textarea to be processed for linebreaks.
+ */
+function _cell_validate($element, &$form_state) {
+  $value = $element['#value'];
+  if (!empty($element['#value'])) {
+    $value = nl2br($value);
+    form_set_value($element, $value, $form_state);
+  }
 }
 
 /**
