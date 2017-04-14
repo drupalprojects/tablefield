@@ -205,27 +205,22 @@ function tablefield_field_widget_settings_form($field, $instance) {
       'title' => t('More tablefield options'),
     ),
   ));
-
-  $form['tablefield_widget_settings'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('TableField widget settings'),
-    '#description' => t('Additional TableField settings are available at !manage_display.', array('!manage_display' => $manage_display)),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+  $form['other_table_settings'] = array(
+    '#markup' => t('Additional TableField settings are available at !manage_display.', array('!manage_display' => $manage_display)),
   );
-  $form['tablefield_widget_settings']['restrict_rebuild'] = array(
+  $form['restrict_rebuild'] = array(
     '#type' => 'checkbox',
     '#title' => t('Restrict rebuilding'),
     '#description' => t('Avoid the number of cols/rows being changed by content editors. For all users in combination with locked cells below. For users without the permission "rebuild tablefield" in other cases.'),
     '#default_value' => isset($instance['widget']['settings']['restrict_rebuild']) ? $instance['widget']['settings']['restrict_rebuild'] : FALSE,
   );
-  $form['tablefield_widget_settings']['lock_values'] = array(
+  $form['lock_values'] = array(
     '#type' => 'checkbox',
     '#title' => t('Lock cells with default values'),
     '#description' => t('Avoid headers being changed by content editors.'),
     '#default_value' => isset($instance['widget']['settings']['lock_values']) ? $instance['widget']['settings']['lock_values'] : FALSE,
   );
-  $form['tablefield_widget_settings']['input_type'] = array(
+  $form['input_type'] = array(
     '#type' => 'radios',
     '#title' => t('Input type'),
     '#default_value' => isset($instance['widget']['settings']['input_type']) ? $instance['widget']['settings']['input_type'] : 'textfield',
@@ -235,7 +230,7 @@ function tablefield_field_widget_settings_form($field, $instance) {
       'textarea' => t('textarea'),
     ),
   );
-  $form['tablefield_widget_settings']['cell_processing'] = array(
+  $form['cell_processing'] = array(
     '#type' => 'radios',
     '#title' => t('Table cell processing'),
     '#default_value' => isset($instance['widget']['settings']['cell_processing']) ? $instance['widget']['settings']['cell_processing'] : 0,
