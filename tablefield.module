@@ -200,14 +200,6 @@ function tablefield_get_table_value($data, array $options, $name, $type, $info) 
  */
 function tablefield_field_widget_settings_form($field, $instance) {
   $form = array();
-  $manage_display = l(t('Manage display'), '/admin/structure/types/manage/' . $instance['bundle'] . '/display', array(
-    'attributes' => array(
-      'title' => t('More tablefield options'),
-    ),
-  ));
-  $form['other_table_settings'] = array(
-    '#markup' => t('Additional TableField settings are available at !manage_display.', array('!manage_display' => $manage_display)),
-  );
   $form['restrict_rebuild'] = array(
     '#type' => 'checkbox',
     '#title' => t('Restrict rebuilding'),
@@ -253,9 +245,14 @@ function tablefield_field_settings_form($field, $instance, $has_data) {
       'target' => '_blank',
     ),
   ));
+  $manage_display = l(t('Manage display'), '/admin/structure/types/manage/' . $instance['bundle'] . '/display', array(
+    'attributes' => array(
+      'title' => t('More tablefield options'),
+    ),
+  ));
   $form = array();
   $form['message'] = array(
-    '#markup' => t('If multiple values are allowed it is recommended to install and enable the !multiple_fields_remove_button_module.', array('!multiple_fields_remove_button_module' => $multiple_fields_remove_button_module)),
+    '#markup' => t('If multiple values are allowed it is recommended to install and enable the !multiple_fields_remove_button_module. Additional TableField settings are available at !manage_display.', array('!multiple_fields_remove_button_module' => $multiple_fields_remove_button_module, '!manage_display' => $manage_display)),
     '#weight' => -100,
   );
 
@@ -1000,7 +997,6 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
       $default_value = drupal_array_get_nested_value($form_state['input'], $tablefield_parents);
     }
   }
-
   // If no values by now, get tablefield item value stored in database, if any.
   if (!$default_value) {
     // This could be set e.g. when using paragraphs module.
@@ -1098,8 +1094,17 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   // Loop over all the rows.
   for ($i = 0; $i < $count_rows; $i++) {
     $zebra = $i % 2 == 0 ? 'even' : 'odd';
+    // Disable table drag functionality in case of locked default cells under the first row.
+    $draggable = 'draggable ';
+    unset($instance['default_value'][0]['tablefield']['tabledata']["row_{$i}"]['weight']);
+    if (arg(0) == 'admin' ||
+      (isset($instance['default_value'][0]['tablefield']['tabledata']["row_{$i}"])
+        && array_filter($instance['default_value'][0]['tablefield']['tabledata']["row_{$i}"]))
+      ) {
+      $draggable = FALSE;
+    }
     $element['tablefield']['tabledata']['b_break' . $i] = array(
-      '#markup' => '<tr class="draggable tablefield-row-' . $i . ' ' . $zebra . '"><td class="tablefield-row-count">' . ($i + 1) . '</td>',
+      '#markup' => '<tr class="' . $draggable . 'tablefield-row-' . $i . ' ' . $zebra . '"><td class="tablefield-row-count">' . ($i + 1) . '</td>',
     );
 
     // Loop over all the columns.
