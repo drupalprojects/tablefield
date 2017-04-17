@@ -1495,7 +1495,7 @@ function tablefield_import_pasted($form, &$form_state, $langcode, $pasted_form_f
     $rows = explode(PHP_EOL, $data);
     foreach ($rows as $row_id => $row) {
       // Explode the current row into columns:
-      $cols = explode($col_delimiter, $row);
+      $cols = str_getcsv($row, $col_delimiter);
       $col_count = count($cols);
       if ($col_count > 0) {
         foreach ($cols as $col_id => $col) {
