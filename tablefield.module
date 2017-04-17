@@ -203,7 +203,7 @@ function tablefield_field_widget_settings_form($field, $instance) {
   $form['restrict_rebuild'] = array(
     '#type' => 'checkbox',
     '#title' => t('Restrict rebuilding'),
-    '#description' => t('Avoid the number of cols/rows being changed by content editors. For all users in combination with locked cells below. For users without the permission "rebuild tablefield" in other cases.'),
+    '#description' => t('Avoid the number of cols/rows being changed by content editors. For all users in combination with locked cells below. For users without the permission "rebuild tablefield" in other cases.') . '<br />' . t('Also needed if added or removed rows from the default field settings should apply on the edit form of existing content.'),
     '#default_value' => isset($instance['widget']['settings']['restrict_rebuild']) ? $instance['widget']['settings']['restrict_rebuild'] : FALSE,
   );
   $form['lock_values'] = array(
@@ -411,6 +411,7 @@ function tablefield_field_formatter_info() {
       'label' => t('Raw data (JSON or XML)'),
       'field types' => array('tablefield'),
       'settings' => array(
+        'tabledatakey' => 'tabledata',
         'usearraykeys' => 'No',
         'rowkey' => FALSE,
         'vertheader' => FALSE,
@@ -431,6 +432,7 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
   $summary = array();
   switch ($display['type']) {
     case 'format_raw':
+      $summary[] = t('Wrapper for table data (if applicable): %tr', array('%tr' => $settings['tabledatakey']));
       $summary[] = t('Use first row/column values as keys (if not empty): %tr', array('%tr' => $settings['usearraykeys']));
       if ($settings['usearraykeys'] === 'Both') {
         $summary[] = t('Row identifier key: %tr', array('%tr' => t('Disabled')));
@@ -489,6 +491,22 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
   $element = array();
   switch ($display['type']) {
     case 'format_raw':
+      // Get a machine name from the field name (without 'field_' prefix).
+      $prefix = 'field_';
+      $machine = $instance['field_name'];
+      if (substr($machine, 0, strlen($prefix)) == $prefix) {
+        $machine = substr($machine, strlen($prefix));
+      }
+      $element['tabledatakey'] = array(
+        '#type' => 'select',
+        '#title' => t('Wrapper for table data (if applicable)'),
+        '#options' => array(
+          'tabledata' => t('tabledata (fixed string)'),
+          $instance['label'] => t('Label: @label', array('@label' => $instance['label'])),
+          $machine => t('Machine name: @machine', array('@machine' => $machine)),
+        ),
+        '#default_value' => $settings['tabledatakey'],
+      );
       $element['usearraykeys'] = array(
         '#type' => 'select',
         '#title' => t('Use first row/column values as keys (if not empty)'),
@@ -734,12 +752,21 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
             // DEVELOPERS! Extra future data should be unset below (e.g. title).
             $value['caption'] = $caption;
           }
+          // Use the set wrapper for the table data.
+          if (isset($value[0]['tabledata']) && $settings['tabledatakey'] !== 'tabledata') {
+            $value[0][$settings['tabledatakey']] = $value[0]['tabledata'];
+            unset($value[0]['tabledata']);
+          }
+          elseif (isset($value['tabledata']) && $settings['tabledatakey'] !== 'tabledata') {
+            $value[$settings['tabledatakey']] = $value['tabledata'];
+            unset($value['tabledata']);
+          }
           // Add the table to the final output.
           if ($settings['tabledataonly']) {
             array_push($values, array_values($value));
           }
           else {
-            $value['tabledata'] = $settings['usearraykeys'] === 'Both' || $settings['rowkey'] ? $value[0]['tabledata'] : array_values($value['tabledata']);
+            $value[$settings['tabledatakey']] = $settings['usearraykeys'] === 'Both' || $settings['rowkey'] ? $value[0][$settings['tabledatakey']] : array_values($value[$settings['tabledatakey']]);
             unset($value[0]);
             krsort($value);
             array_push($values, $value);
@@ -1094,7 +1121,8 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   // Loop over all the rows.
   for ($i = 0; $i < $count_rows; $i++) {
     $zebra = $i % 2 == 0 ? 'even' : 'odd';
-    // Disable table drag functionality in case of locked default cells under the first row.
+    // Disable table drag functionality in case of locked default cells under the
+    // first row or completely on the field settings form.
     $draggable = 'draggable ';
     unset($instance['default_value'][0]['tablefield']['tabledata']["row_{$i}"]['weight']);
     if (arg(0) == 'admin' ||
@@ -2096,7 +2124,7 @@ function array_to_xml($data, &$xml_data) {
   foreach ($data as $key => $value) {
     if (is_numeric($key)) {
       // Dealing with <0/>..<n/> issues.
-      $key = 'table_' . $key;
+      $key = 'item_' . $key;
     }
     // Replace invalid characters in the <element> with an underscore.
     $key = preg_replace('/_+/', '_', trim(str_replace(array(
