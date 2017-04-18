@@ -783,12 +783,12 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
         // Serve pretty print with a fixed-width font and preserve spaces and
         // line breaks.
         // Show pretty print on node pages and raw on other pages.
-        $prettyprint = (menu_get_object()) ? JSON_PRETTY_PRINT : NULL;
+        $prettyprint = (menu_get_object()) ? JSON_PRETTY_PRINT : FALSE;
         if ($prettyprint) {
           $element['#prefix'] = '<pre>';
           $element['#suffix'] = '</pre>';
         }
-        $numeric_check = $settings['numeric_check'] ? JSON_NUMERIC_CHECK : NULL;
+        $numeric_check = $settings['numeric_check'] ? JSON_NUMERIC_CHECK : FALSE;
         // Avoid a wrapping array if we have a single table (not multi-value).
         if (!(count($values) - 1)) {
           $values = array_shift($values);
@@ -797,20 +797,23 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
         // or XML.
         if ($settings['xml']) {
           // Creating object of SimpleXMLElement.
-          $xml_data = new SimpleXMLElement('<?xml version="1.0"?><data></data>');
+          $xml_data = new SimpleXMLElement('<?xml version="1.0"?><' . $settings['tabledatakey'] . '></' . $settings['tabledatakey'] . '>');
           // Function call to convert array to xml.
           array_to_xml($values, $xml_data);
           if ($prettyprint) {
             $dom = dom_import_simplexml($xml_data)->ownerDocument;
             $dom->formatOutput = TRUE;
             $output = $dom->saveXML();
+            $element[0] = array(
+              '#markup' => '<xmp>' . $output . '</xmp>',
+            );
           }
           else {
             $output = $xml_data->asXML();
+            $element[0] = array(
+              '#markup' => str_replace('<?xml version="1.0"?>', '', $output),
+            );
           }
-          $element[0] = array(
-            '#markup' => '<xmp>' . $output . '</xmp>',
-          );
         }
         else {
           $element[0] = array(
