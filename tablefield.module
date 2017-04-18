@@ -2126,16 +2126,10 @@ function array_to_xml($data, &$xml_data) {
       // Dealing with <0/>..<n/> issues.
       $key = 'item_' . $key;
     }
-    // Replace invalid characters in the <element> with an underscore.
-    $key = preg_replace('/_+/', '_', trim(str_replace(array(
-      ' ',
-      '<',
-      '>',
-      '&',
-      '\'',
-      '"',
-      '/',
-    ), '_', $key), '_'));
+    // Within keys (XML element tags) only accept A-Z (case insensitive), 0-9,
+    // a dash (-) and an underscore (_). Replace all others with an underscore.
+    // Avoid multiple consecutive underscores.
+    $key = preg_replace('/_+/', '_', preg_replace('/[^A-Za-z0-9_\-]/', '_', $key));
     // If the <3element> starts with a number, prefix it with an underscore
     // <_3element> to get valid XML.
     $key = is_numeric(substr($key, 0, 1)) ? substr_replace($key, '_', 0, 0) : $key;
