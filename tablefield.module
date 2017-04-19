@@ -1113,7 +1113,8 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
 
   $default_value = isset($default_value['tabledata']) ? $default_value['tabledata'] : $default_value;
   // Make added default values visible when editing existing content.
-  if ($instance['widget']['settings']['restrict_rebuild']
+  if (isset($instance['widget']['settings']['restrict_rebuild'])
+    && $instance['widget']['settings']['restrict_rebuild']
     && $instance['widget']['settings']['lock_values']
     && arg(0) !== 'admin'
     && arg(0) !== 'system') {
@@ -1227,7 +1228,8 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     isset($instance['widget']['settings']['restrict_rebuild'])
     && $instance['widget']['settings']['restrict_rebuild']
     && !user_access('rebuild tablefield'))
-    || ($instance['widget']['settings']['restrict_rebuild']
+    || (isset($instance['widget']['settings']['restrict_rebuild'])
+    && $instance['widget']['settings']['restrict_rebuild']
     && $instance['widget']['settings']['lock_values']
     && arg(0) !== 'admin'
     && arg(0) !== 'system'
