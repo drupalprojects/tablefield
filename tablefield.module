@@ -783,7 +783,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
         // Serve pretty print with a fixed-width font and preserve spaces and
         // line breaks.
         // Show pretty print on node pages and raw on other pages.
-        $prettyprint = (menu_get_object()) ? JSON_PRETTY_PRINT : FALSE;
+        $prettyprint = (menu_get_object() && arg(2) !== 'themeless') ? JSON_PRETTY_PRINT : FALSE;
         if ($prettyprint) {
           $element['#prefix'] = '<pre>';
           $element['#suffix'] = '</pre>';
@@ -798,6 +798,10 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
         if ($settings['xml']) {
           // Creating object of SimpleXMLElement.
           $xml_data = new SimpleXMLElement('<?xml version="1.0"?><' . $settings['tabledatakey'] . '></' . $settings['tabledatakey'] . '>');
+          // Flatten the array if we only have one element.
+          if (count($values) === 1) {
+            $values = current($values);
+          }
           // Function call to convert array to xml.
           array_to_xml($values, $xml_data);
           if ($prettyprint) {
