@@ -30,7 +30,9 @@ function tablefield_themeless_menu_local_tasks_alter(&$data, $router_item, $root
   // Get all table fields.
   $tablefield = array();
   foreach ($fields as $key => $value) {
-    $tablefield[] = $value['widget']['type'] === 'tablefield' ? $key : NULL;
+    if ($value['widget']['type'] === 'tablefield') {
+      $tablefield[] = $key;
+    }
   }
   // Add a 'Themeless TableField' tab only if the content type has a TableField.
   if ($node && $root_path == 'node/%' && isset($tablefield[0]) && !empty($tablefield[0])) {
@@ -57,7 +59,9 @@ function tablefield_themeless_view($node) {
   // Get all table fields.
   $tablefield = array();
   foreach ($fields as $key => $value) {
-    $tablefield[] = $value['widget']['type'] === 'tablefield' ? $key : NULL;
+    if ($value['widget']['type'] === 'tablefield') {
+      $tablefield[] = $key;
+    }
   }
   // Populate $node->content with a render() array.
   node_build_content($node, 'themeless');
