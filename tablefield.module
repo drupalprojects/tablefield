@@ -772,11 +772,11 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
             array_push($values, $value);
           }
           // If the field is not plain text and a text area then remove
-          // linebreaks and convert special characters to HTML entities.
+          // linebreaks.
           $format = isset($items[$delta]['format']) ? $items[$delta]['format'] : 'plain_text';
           array_walk_recursive($values, function (&$value) use ($format) {
             if ($format !== 'plain_text') {
-              $value = str_replace(array("\r", "\n"), '', htmlspecialchars($value, ENT_NOQUOTES, 'UTF-8'));
+              $value = str_replace(array("\r", "\n"), '', $value);
             }
           });
         }
@@ -1129,8 +1129,8 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
   // Loop over all the rows.
   for ($i = 0; $i < $count_rows; $i++) {
     $zebra = $i % 2 == 0 ? 'even' : 'odd';
-    // Disable table drag functionality in case of locked default cells under the
-    // first row or completely on the field settings form.
+    // Disable table drag functionality in case of locked default cells under
+    // the first row or completely on the field settings form.
     $draggable = 'draggable ';
     unset($instance['default_value'][0]['tablefield']['tabledata']["row_{$i}"]['weight']);
     if (arg(0) == 'admin' ||
