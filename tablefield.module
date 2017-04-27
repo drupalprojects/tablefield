@@ -494,18 +494,33 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
       // Get a machine name from the field name (without 'field_' prefix).
       $prefix = 'field_';
       $machine = $instance['field_name'];
+      $select = 'select';
+      $select_or_other_module = l(t('Select (or other) module'), 'https://drupal.org/project/select_or_other', array(
+          'attributes' => array(
+            'title' => t('Select (or other) | Drupal.org'),
+            'target' => '_blank',
+          ),
+      ));
+      $description = t('To provide a custom value install and enable the !select_or_other_module.', array('!select_or_other_module' => $select_or_other_module));
+      if (module_exists('select_or_other')) {
+        $select = 'select_or_other';
+        $description = NULL;
+      }
       if (substr($machine, 0, strlen($prefix)) == $prefix) {
         $machine = substr($machine, strlen($prefix));
       }
       $element['tabledatakey'] = array(
-        '#type' => 'select',
+        '#type' => $select,
         '#title' => t('Wrapper for table data (if applicable)'),
+        '#description' => $description,
         '#options' => array(
           'tabledata' => t('tabledata (fixed string)'),
           $instance['label'] => t('Label: @label', array('@label' => $instance['label'])),
           $machine => t('Machine name: @machine', array('@machine' => $machine)),
         ),
         '#default_value' => $settings['tabledatakey'],
+        '#other_unknown_defaults' => 'other',
+        '#other_delimiter' => FALSE,
       );
       $element['usearraykeys'] = array(
         '#type' => 'select',
