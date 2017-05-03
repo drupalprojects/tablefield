@@ -418,6 +418,7 @@ function tablefield_field_formatter_info() {
         'tabledataonly' => TRUE,
         'numeric_check' => TRUE,
         'xml' => FALSE,
+        'xml_safe' => 'cdata',
       ),
     ),
   );
@@ -449,6 +450,12 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
         $summary[] = t('Encode numeric strings as numbers: %tr', array('%tr' => ($settings['numeric_check']) ? t('Yes') : t('No')));
       }
       $summary[] = t('XML instead of JSON: %tr', array('%tr' => ($settings['xml']) ? t('Yes') : t('No')));
+      if (!$settings['xml']) {
+        $summary[] = t('How to make field values XML safe?: %tr', array('%tr' => t('Disabled')));
+      }
+      else {
+        $summary[] = t('How to make field values XML safe?: %tr', array('%tr' => $settings['xml_safe']));
+      }
       break;
 
     default:
@@ -558,13 +565,27 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
       );
       if ($settings['xml']) {
         $element['numeric_check']['#disabled'] = TRUE;
-        $element['numeric_check']['#title'] = '<span class="grayed-out">' . t('Encode numeric strings as numbers') . '</span> | ' . t("Disabled because below XML is set that does not use quotes around any values.");
+        $element['numeric_check']['#title'] = '<span class="grayed-out">' . t('Encode numeric strings as numbers') . '</span> | ' . t("Disabled because below XML is selected that does not use quotes around any values.");
       }
       $element['xml'] = array(
         '#title' => t('XML instead of JSON'),
         '#type' => 'checkbox',
         '#default_value' => $settings['xml'],
       );
+      $element['xml_safe'] = array(
+        '#type' => 'select',
+        '#title' => t('How to make field values XML safe?'),
+        '#options' => array(
+          'htmlspecialchars' => t('Convert special characters to HTML entities (htmlspecialchars)'),
+          'cdata' => t('Represent field values that contain special characters as a CDATA section'),
+          'cdata_all' => t('Represent all field values as a CDATA section'),
+        ),
+        '#default_value' => $settings['xml_safe'],
+      );
+      if (!$settings['xml']) {
+        $element['xml_safe']['#disabled'] = TRUE;
+        $element['xml_safe']['#title'] = '<span class="grayed-out">' . t('How to make field values XML safe?') . '</span> | ' . t("Disabled because above XML is not selected.");
+      }
       break;
 
     default:
@@ -789,9 +810,31 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
           // If the field is not plain text and a text area then remove
           // linebreaks.
           $format = isset($items[$delta]['format']) ? $items[$delta]['format'] : 'plain_text';
-          array_walk_recursive($values, function (&$value) use ($format) {
+          array_walk_recursive($values, function (&$value) use ($format, $settings) {
             if ($format !== 'plain_text') {
-              $value = str_replace(array("\r", "\n"), '', $value);
+              if ($settings['xml']) {
+                switch ($settings['xml_safe']) {
+                  case 'htmlspecialchars':
+                    $value = str_replace(array("\r", "\n"), '', htmlspecialchars($value));
+                    break;
+
+                  case 'cdata':
+                    if (preg_match('/[&"\'<>]/', $value)) {
+                      $value = str_replace(array("\r", "\n"), '', '<![CDATA[' . str_replace(']]>', '', $value) . ']]>');
+                    }
+                    else {
+                      $value = str_replace(array("\r", "\n"), '', $value);
+                    }
+                    break;
+
+                  default:
+                      $value = str_replace(array("\r", "\n"), '', '<![CDATA[' . str_replace(']]>', '', $value) . ']]>');
+                    break;
+                }
+              }
+              else {
+                $value = str_replace(array("\r", "\n"), '', $value);
+              }
             }
           });
         }
