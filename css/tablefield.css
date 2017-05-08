@@ -36,3 +36,7 @@
 .form-tablefield fieldset {
   margin: 0.5em 0;
 }
+/* To have an input value close to its unit for the field 'Maximum cell length'.*/
+.tablefield-form-align {
+  text-align: right; /* LTR */
+}

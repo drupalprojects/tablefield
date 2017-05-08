@@ -222,6 +222,19 @@ function tablefield_field_widget_settings_form($field, $instance) {
       'textarea' => t('textarea'),
     ),
   );
+  $form['max_length'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Maximum cell length'),
+    '#default_value' => isset($instance['widget']['settings']['max_length']) ? $instance['widget']['settings']['max_length'] : '2048',
+    '#element_validate' => array('tablefield_validate_number'),
+    '#size' => 6,
+    '#maxlength' => 6,
+    '#min' => 1,
+    '#step' => 1,
+    '#field_suffix' => t('characters'),
+    '#attributes' => array('class' => array('tablefield-form-align')),
+    '#required' => TRUE,
+  );
   $form['cell_processing'] = array(
     '#type' => 'radios',
     '#title' => t('Table cell processing'),
@@ -257,6 +270,92 @@ function tablefield_field_settings_form($field, $instance, $has_data) {
   );
 
   return $form;
+}
+
+/**
+ * Form element validation handler for #type 'tablefield_number'.
+ *
+ * Note that #required is validated by _form_validate() already.
+ */
+function tablefield_validate_number($element, &$form_state) {
+  $value = $element['#value'];
+  if ($value === '') {
+    return;
+  }
+
+  $name = empty($element['#title']) ? $element['#parents'][0] : $element['#title'];
+
+  // Ensure the input is numeric.
+  if (!is_numeric($value)) {
+    form_error($element, t('%name must be a number.', array('%name' => $name)));
+    return;
+  }
+
+  // Ensure that the input is greater than the #min property, if set.
+  if (isset($element['#min']) && $value < $element['#min']) {
+    form_error($element, t('%name must be higher or equal to %min.', array('%name' => $name, '%min' => $element['#min'])));
+  }
+
+  // Ensure that the input is less than the #max property, if set.
+  if (isset($element['#max']) && $value > $element['#max']) {
+    form_error($element, t('%name must be below or equal to %max.', array('%name' => $name, '%max' => $element['#max'])));
+  }
+
+  if (isset($element['#step']) && strtolower($element['#step']) != 'any') {
+    // Check that the input is an allowed multiple of #step (offset by #min if
+    // #min is set).
+    $offset = isset($element['#min']) ? $element['#min'] : 0.0;
+
+    if (!tablefield_valid_number_step($value, $element['#step'], $offset)) {
+      form_error($element, t('%name is not a multiple of %step.', array('%name' => $name, '%step' => $element['#step'])));
+    }
+  }
+}
+
+/**
+ * Verifies that a number is a multiple of a given step.
+ *
+ * The implementation assumes it is dealing with IEEE 754 double precision
+ * floating point numbers that are used by PHP on most systems.
+ *
+ * This is based on the number/range verification methods of webkit.
+ *
+ * @param $value
+ *   The value that needs to be checked.
+ * @param $step
+ *   The step scale factor. Must be positive.
+ * @param $offset
+ *   (optional) An offset, to which the difference must be a multiple of the
+ *   given step.
+ *
+ * @return bool
+ *   TRUE if no step mismatch has occured, or FALSE otherwise.
+ *
+ * @see http://opensource.apple.com/source/WebCore/WebCore-1298/html/NumberInputType.cpp
+ */
+function tablefield_valid_number_step($value, $step, $offset = 0.0) {
+  $double_value = (double) abs($value - $offset);
+
+  // The fractional part of a double has 53 bits. The greatest number that could
+  // be represented with that is 2^53. If the given value is even bigger than
+  // $step * 2^53, then dividing by $step will result in a very small remainder.
+  // Since that remainder can't even be represented with a single precision
+  // float the following computation of the remainder makes no sense and we can
+  // safely ignore it instead.
+  if ($double_value / pow(2.0, 53) > $step) {
+    return TRUE;
+  }
+
+  // Now compute that remainder of a division by $step.
+  $remainder = (double) abs($double_value - $step * round($double_value / $step));
+
+  // $remainder is a double precision floating point number. Remainders that
+  // can't be represented with single precision floats are acceptable. The
+  // fractional part of a float has 24 bits. That means remainders smaller than
+  // $step * 2^-24 are acceptable.
+  $computed_acceptable_error = (double) ($step / pow(2.0, 24));
+
+  return $computed_acceptable_error >= $remainder || $remainder >= ($step - $computed_acceptable_error);
 }
 
 /**
@@ -1221,6 +1320,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
       }
       else {
         $input_type = isset($instance['widget']['settings']['input_type']) ? $instance['widget']['settings']['input_type'] : 'textfield';
+        $max_length = isset($instance['widget']['settings']['max_length']) ? abs($instance['widget']['settings']['max_length']) : '2048';
         $cell_default = isset($default_value['row_' . $i]['col_' . $ii]) ? $default_value['row_' . $i]['col_' . $ii] : '';
         // If the field does not contain HTML, is not plain text and a text area
         // then covert linebreaks to <br />.
@@ -1234,7 +1334,7 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
 
         $element['tablefield']['tabledata']['row_' . $i]['col_' . $ii] = array(
           '#type' => $input_type,
-          '#maxlength' => 2048,
+          '#maxlength' => $max_length,
           '#size' => 0,
           '#attributes' => array(
             'id' => $id . '-cell-' . $i . '-' . $ii,
