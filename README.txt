@@ -47,11 +47,15 @@ Add a tablefield to any entity:
 For nodes field settings for some of the below options can be found through
 'manage fields' at ../admin/structure/types. For others entities see above.
 
-- Restrict rebuilding to users with the permission "rebuild tablefield"
+- Restrict rebuilding to users with the permission "rebuild tablefield".
 - Lock table header so default values cannot be changed.
-- Table cell processing (radios)
+- Input type: textfield or textarea.
+- Maximum cell length in characters (integer >= 1, max 999999).
+- Table cell processing (radios).
   * Plain text
   * Filtered text (user selects input format)
+- Default value for example to create a header on new tables. Can be locked
+  selecting the appropriate checkbox mentiond above.
 
 
 ### Per display mode (display settings) ###
@@ -68,32 +72,71 @@ stated otherwise.
 #### Tabular view ####
 
 - Sticky header
-- Hide table header
+- Sortable (install and enable https://drupal.org/project/tablesorter)
+- Hide first row
 - Hide empty columns ignoring column header
-- Trim empty trailing rows
 - Trim empty trailing columns
+- Trim empty trailing rows
 - Hide empty rows
 - Hide empty columns
 - Show link to export table data as CSV depending on permission
 
 
-#### Raw data (JSON) ####
+#### Raw data (JSON or XML) ####
 
-This format is intended to provide table data as a service. For example when
-using a View that outputs JSON the field configuration includes 'Formatter'.
-When choosing 'Raw data (JSON)' it shows the below options.
+This format is intended to provide table data as a service:
 
+- directly by enabling the submodule TableField Themeless. It provides
+  themeless output of a node's tablefield on the path 'node/%/themeless' (HTML,
+  JSON or XML).
+- using a View (e.g. with https://www.drupal.org/project/views_datasource) that
+  outputs JSON or XML. The Views field settings includes 'Formatter'.
+- using a custom service (e.g. with https://www.drupal.org/project/services).
+
+
+When choosing 'Raw data (JSON or XML)' it shows the below options:
+
+- Wrapper for table data (if applicable)
+  * tabledata (fixed string)
+  * Label: [the actual field label]
+  * Machine name: [the actual field machine name without field_ prefix]
+  * To provide a custom value install and enable the 'Select (or other)'
+    module (https://www.drupal.org/project/select_or_other).
 - Use first row/column values as array keys (if not empty). (select)
   * No
   * Header only
   * Both first row and first column (two headers)
+- Row identifier key
 - Vertical header (first column instead of first row)
 - Table data only (no caption)
+- Encode numeric strings as numbers (for JSON only)
+- XML instead of JSON
+- How to make field values XML safe? (for XML only)
+  * Convert special characters to HTML entities (htmlspecialchars)
+  * Represent field values that contain special characters as a CDATA section
+  * Represent all field values as a CDATA section
 
 Using this format for a display mode for a node content type will display the
-JSON in pretty print. More logical is to use the regular 'Tabular view' for the
-node display and use the 'Raw dat (JSON)' diplay only in a View. That would
-expose the date of published tables on a site automatically as a service.
+JSON or XML in pretty print. More logical is to use the regular 'Tabular view'
+for the node display and use the 'Raw dat (JSON)' diplay only for a service.
+That would expose the data of published tables on a site automatically as a
+service.
+
+
+### Themeless output ###
+
+Enabling the submodule TableField Themeless provides themeless output of a
+node's tablefield on the path 'node/%/themeless' (HTML, JSON or XML). This is
+useful to embed the table's HTML elsewhere (as an iFrame) or to provide the
+table data as a service (JSON or XML) directly without the need of Views or a
+Service.
+
+- Enable the submodule TableField Themeless.
+- Go to ../admin/structure/types/manage/[your-content-type]/display.
+- Uncollapse the CUSTOM DISPLAY SETTINGS and select 'Themeless'.
+- Save.
+- Now a new display mode appears besides Default and Teaser. Go and configure.
+- Save.
 
 
 ## CREDITS ##

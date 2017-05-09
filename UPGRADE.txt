@@ -4,6 +4,8 @@ A database update script using hook_update_N is provided that takes care of:
 - converting existing table to a new database structure
 - moving existing field settings to diplay settings instead, maintaining the
   values.
+- moving options from TABLE FIELD SETTINGS to [content-type] SETTINGS,
+  maintaining the values.
 
 It should be noted that the database structure has fundamentally changed. If
 you use (custom) code that interacts directly with the tablefield data you
