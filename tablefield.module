@@ -496,6 +496,7 @@ function tablefield_field_formatter_info() {
       'settings' => array(
         'header_orientation' => 'Horizontal',
         'sticky_header' => TRUE,
+        'striping' => TRUE,
         'sortable' => FALSE,
         'hide_header' => FALSE,
         'hide_empty_rows' => FALSE,
@@ -565,6 +566,7 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
       else {
         $summary[] = t('Sticky header: %tr', array('%tr' => ($settings['sticky_header']) ? t('Yes') : t('No')));
       }
+      $summary[] = t('Striping (odd/even class): %tr', array('%tr' => ($settings['striping']) ? t('Yes') : t('No')));
       if (!module_exists('tablesorter') || $settings['header_orientation'] === 'Vertical') {
         $summary[] = t('Sortable: %tr', array('%tr' => t('Disabled')));
       }
@@ -707,6 +709,11 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
         $element['sticky_header']['#disabled'] = TRUE;
         $element['sticky_header']['#title'] = '<span class="grayed-out">' . t('Sticky header') . '</span> | ' . t("Disabled because above only the first column is set as header.");
       }
+      $element['striping'] = array(
+        '#title' => t('Striping (odd/even class)'),
+        '#type' => 'checkbox',
+        '#default_value' => $settings['striping'],
+      );
       $element['sortable'] = array(
         '#title' => t('Sortable'),
         '#type' => 'checkbox',
@@ -1071,6 +1078,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
               '#caption' => $caption,
               '#header_orientation' => isset($settings['header_orientation']) ? $settings['header_orientation'] : 'Horizontal',
               '#sticky' => isset($settings['sticky_header']) ? $settings['sticky_header'] : NULL,
+              '#striping' => isset($settings['striping']) ? $settings['striping'] : NULL,
               '#sortable' => isset($settings['sortable']) ? $settings['sortable'] : NULL,
               '#header' => $header,
               '#rows' => $tabledata,
@@ -1763,6 +1771,7 @@ function tablefield_theme() {
         'formatter' => NULL,
         'header_orientation' => 'Horizontal',
         'sticky' => NULL,
+        'striping' => NULL,
         'sortable' => NULL,
         'attributes' => array(),
       ),
@@ -1775,6 +1784,7 @@ function tablefield_theme() {
         'colgroups' => array(),
         'header_orientation' => 'Horizontal',
         'sticky' => NULL,
+        'striping' => NULL,
         'sortable' => NULL,
         'empty' => NULL,
       ),
@@ -1822,6 +1832,9 @@ function theme_tablefield_view($variables) {
   }
   if (isset($variables['sticky'])) {
     $theme_variables['sticky'] = $variables['sticky'];
+  }
+  if (isset($variables['striping'])) {
+    $theme_variables['striping'] = $variables['striping'];
   }
   if (isset($variables['sortable'])) {
     $theme_variables['sortable'] = $variables['sortable'];
@@ -2124,6 +2137,7 @@ function tablefield_form_alter(&$form, &$form_state, $form_id) {
  *     apply same background style to all.
  *   - header_orientation: Horizontal, vertical or both.
  *   - sticky: Use a "sticky" table header.
+ *   - striping: Do add an 'odd' or 'even' class to rows.
  *   - sortable: Allow column sorting by clicking the column in the  first row.
  *   - empty: The message to display in an extra row if table does not have any
  *     rows.
@@ -2136,6 +2150,7 @@ function theme_tablefield($variables) {
   $colgroups = $variables['colgroups'];
   $header_orientation = $variables['header_orientation'];
   $sticky = $variables['sticky'];
+  $no_striping = !$variables['striping'];
   $empty = $variables['empty'];
   if ($variables['sortable']) {
     drupal_add_css(drupal_get_path('module', 'tablefield') . '/css/tablefield_sort.css');
@@ -2257,7 +2272,6 @@ function theme_tablefield($variables) {
       else {
         $cells = $row;
         $attributes = array();
-        $no_striping = FALSE;
       }
       if (count($cells)) {
         // Add odd/even class.
