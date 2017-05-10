@@ -138,6 +138,10 @@ Service.
 - Now a new display mode appears besides Default and Teaser. Go and configure.
 - Save.
 
+Install and enable https://www.drupal.org/project/subpathauto to have the
+themeless output available under the alias path like 'some/alias/themeless'
+besides 'node/%/themeless'.
+
 
 ## CREDITS ##
 
