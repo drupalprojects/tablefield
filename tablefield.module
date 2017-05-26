@@ -972,21 +972,60 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
             $dom = dom_import_simplexml($xml_data)->ownerDocument;
             $dom->formatOutput = TRUE;
             $output = $dom->saveXML();
+            $markup = '<xmp>' . $output . '</xmp>';
+            // Let other modules change the output.
+            $context = array(
+              'entity_type' => $entity_type,
+              'entity' => $entity,
+              'field' => $field,
+              'instance' => $instance,
+              'language' => $langcode,
+              'items' => $items,
+              'display' => $display,
+              'table_field_output_type' => 'xml_pretty_print',
+            );
+            drupal_alter('tablefield_output', $markup, $context);
             $element[0] = array(
-              '#markup' => '<xmp>' . $output . '</xmp>',
+              '#markup' => $markup,
             );
           }
           else {
             $output = $xml_data->asXML();
+            $markup = str_replace('<?xml version="1.0"?>', '', $output);
+            // Let other modules change the output.
+            $context = array(
+              'entity_type' => $entity_type,
+              'entity' => $entity,
+              'field' => $field,
+              'instance' => $instance,
+              'language' => $langcode,
+              'items' => $items,
+              'display' => $display,
+              'table_field_output_type' => 'xml_raw',
+            );
+            drupal_alter('tablefield_output', $markup, $context);
             $element[0] = array(
-              '#markup' => str_replace('<?xml version="1.0"?>', '', $output),
+              '#markup' => $markup,
             );
           }
         }
         else {
+          $markup = json_encode($values, $prettyprint | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | $numeric_check);
+          // Let other modules change the output.
+          $context = array(
+              'entity_type' => $entity_type,
+              'entity' => $entity,
+              'field' => $field,
+              'instance' => $instance,
+              'language' => $langcode,
+              'items' => $items,
+              'display' => $display,
+              'table_field_output_type' => $prettyprint ? 'json_pretty_print' : 'json_raw',
+            );
+          drupal_alter('tablefield_output', $markup, $context);
           $element[0] = array(
           // See http://php.net/manual/en/json.constants.php#119565.
-            '#markup' => json_encode($values, $prettyprint | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | $numeric_check),
+            '#markup' => $markup,
           );
         }
         break;
