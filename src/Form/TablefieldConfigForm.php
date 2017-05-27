@@ -1,9 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tablefield\Form\TablefieldConfigForm.
- */
 namespace Drupal\tablefield\Form;
 
 use Drupal\Core\Form\ConfigFormBase;

@@ -1,9 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\Core\Render\Element\Textarea.
- */
 
 namespace Drupal\tablefield\Element;
 

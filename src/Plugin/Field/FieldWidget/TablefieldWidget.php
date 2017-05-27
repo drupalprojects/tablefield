@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tablefield\Plugin\Field\FieldWidget\TablefieldWidget.
- */
-
 namespace Drupal\tablefield\Plugin\Field\FieldWidget;
 
 use Drupal\Core\Field\FieldItemListInterface;

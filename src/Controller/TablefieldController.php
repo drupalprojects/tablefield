@@ -1,9 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tablefield\Controller\TablefieldController.
- */
 
 namespace Drupal\tablefield\Controller;
 

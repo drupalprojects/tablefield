@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\tablefield\Plugin\Field\FieldFormatter\TablefieldFormatter.
- */
-
 namespace Drupal\tablefield\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Field\FieldItemListInterface;
