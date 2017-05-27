@@ -25,6 +25,7 @@ class Tablefield extends FormElement {
       '#rows' => 5,
       '#lock' => FALSE,
       '#locked_cells' => array(),
+      '#input_type' => 'textfield',
       '#rebuild' => FALSE,
       '#import' => FALSE,
       '#process' => array(
@@ -39,6 +40,9 @@ class Tablefield extends FormElement {
    */
   public static function processTablefield(&$element, FormStateInterface $form_state, &$complete_form) {
     $value = is_array($element['#value']) ? $element['#value'] : array();
+
+    // Check if the input_type is one of the allowed types.
+    $input_type = in_array($element['#input_type'], ['textarea', 'textfield']) ? $element['#input_type'] : 'textfield';
 
     // string to uniquely identify DOM elements
     $id = implode('-', $element['#parents']);
@@ -79,7 +83,7 @@ class Tablefield extends FormElement {
         else {
           $cell_value = isset($value[$i][$ii]) ? $value[$i][$ii] : '';
           $element['tablefield']['table'][$i][$ii] = array(
-            '#type' => 'textfield',
+            '#type' => $input_type,
             '#maxlength' => 2048,
             '#size' => 0,
             '#attributes' => array(

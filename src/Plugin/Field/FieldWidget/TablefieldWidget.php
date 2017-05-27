@@ -25,6 +25,43 @@ class TablefieldWidget extends WidgetBase {
   /**
    * {@inheritdoc}
    */
+  public static function defaultSettings() {
+    return array(
+      'input_type' => 'textfield',
+    ) + parent::defaultSettings();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function settingsForm(array $form, FormStateInterface $form_state) {
+    $element['input_type'] = array(
+      '#type' => 'radios',
+      '#title' => t('Input type'),
+      '#default_value' => $this->getSetting('input_type'),
+      '#required' => TRUE,
+      '#options' => [
+        'textfield' => 'textfield',
+        'textarea' => 'textarea',
+      ]
+    );
+
+    return $element;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function settingsSummary() {
+    $summary = [];
+    $summary[] = t('Using input type: @input_type', array('@input_type' => $this->getSetting('input_type')));
+
+    return $summary;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     $is_field_settings_default_widget_form = $form_state->getBuildInfo()['form_id'] == 'field_ui_field_edit_form' ? 1 : 0;
 
@@ -56,6 +93,7 @@ class TablefieldWidget extends WidgetBase {
 
     $element = array(
       '#type' => 'tablefield',
+      '#input_type' => $this->getSetting('input_type'),
       '#description_display' => 'before',
       '#description' => $this->t('The first row will appear as the table header. Leave the first row blank if you do not need a header.'),
       '#cols' => $cols,
