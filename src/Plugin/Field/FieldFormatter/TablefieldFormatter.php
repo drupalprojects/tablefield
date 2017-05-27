@@ -34,8 +34,8 @@ class TablefieldFormatter extends FormatterBase {
     $entity_id = $entity->id();
 
 
-    $elements = array();
-  
+    $elements = [];
+
     foreach ($items as $delta => $table) {
 
       if (!empty($table->value)) {
@@ -44,16 +44,16 @@ class TablefieldFormatter extends FormatterBase {
         // Run the table through input filters
         foreach ($tabledata as $row_key => $row) {
           foreach ($row as $col_key => $cell) {
-            $tabledata[$row_key][$col_key] = array(
+            $tabledata[$row_key][$col_key] = [
               'data' => empty($table->format) ? $cell : check_markup($cell, $table->format),
-              'class' => array('row_' . $row_key, 'col_' . $col_key)
-            );
+              'class' => ['row_' . $row_key, 'col_' . $col_key]
+            ];
           }
         }
-  
+
         // Pull the header for theming
         $header_data = array_shift($tabledata);
-  
+
         // Check for an empty header, if so we don't want to theme it.
         $noheader = TRUE;
         foreach ($header_data as $cell) {
@@ -62,55 +62,55 @@ class TablefieldFormatter extends FormatterBase {
             break;
           }
         }
-  
+
         $header = $noheader ? NULL : $header_data;
 
-        $render_array = array();
+        $render_array = [];
 
         // If the user has access to the csv export option, display it now.
         if ($field_settings['export'] && \Drupal::currentUser()->hasPermission('export tablefield')) {
 
-          $route_params = array(
+          $route_params = [
             'entity_type' => $entity_type,
             'entity_id' => $entity_id,
             'field_name' => $field_name,
             'langcode' => $items->getLangcode(),
             'delta' => $delta,
-          );
+          ];
 
           $url = Url::fromRoute('tablefield.export', $route_params);
 
-          $render_array['export'] = array(
+          $render_array['export'] = [
             '#type' => 'container',
-            '#attributes' => array(
+            '#attributes' => [
               'id' => 'tablefield-export-link-' . $delta,
               'class' => 'tablefield-export-link',
-            ),
-          );
-          $render_array['export']['link'] = array(
+            ],
+          ];
+          $render_array['export']['link'] = [
             '#type' => 'link',
             '#title' => $this->t('Export Table Data'),
             '#url' => $url,
-          );
+          ];
         }
 
-        $render_array['tablefield'] = array(
+        $render_array['tablefield'] = [
           '#type' => 'table',
           '#header' => $header,
           '#rows' => $tabledata,
-          '#attributes' => array(
+          '#attributes' => [
             'id' => 'tablefield-' . $delta,
-            'class' => array(
+            'class' => [
               'tablefield'
-            ),
-          ),
+            ],
+          ],
           '#prefix' => '<div id="tablefield-wrapper-'. $delta .'" class="tablefield-wrapper">',
           '#suffix' => '</div>',
-        );
+        ];
 
         $elements[$delta] = $render_array;
       }
-  
+
     }
     return $elements;
   }

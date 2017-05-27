@@ -16,7 +16,7 @@ class Tablefield {
    *  The table as it appears in FAPI.
    */
   static public function rationalizeTable(array $tablefield) {
-    $tabledata = array();
+    $tabledata = [];
 
     // Rationalize the table data
     if (!empty($tablefield)) {

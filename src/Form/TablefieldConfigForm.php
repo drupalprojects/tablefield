@@ -23,32 +23,32 @@ class TablefieldConfigForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    $form['csv_separator'] = array(
+    $form['csv_separator'] = [
       '#type' => 'textfield',
       '#title' => $this->t('CSV separator'),
       '#size' => 1,
       '#maxlength' => 1,
       '#default_value' => \Drupal::config('tablefield.settings')->get('csv_separator'),
       '#description' => $this->t('Select the separator for the CSV import/export.'),
-    );
+    ];
 
-    $form['rows'] = array(
+    $form['rows'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Default number of table rows'),
       '#size' => 3,
       '#maxlength' => 3,
       '#default_value' => \Drupal::config('tablefield.settings')->get('rows'),
       '#description' => $this->t('You can override this in field settings or in your custom form element.'),
-    );
+    ];
 
-    $form['cols'] = array(
+    $form['cols'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Default number of table columns'),
       '#size' => 2,
       '#maxlength' => 2,
       '#default_value' => \Drupal::config('tablefield.settings')->get('cols'),
       '#description' => $this->t('You can override this in field settings or in your custom form element.'),
-    );
+    ];
 
     return parent::buildForm($form, $form_state);
   }

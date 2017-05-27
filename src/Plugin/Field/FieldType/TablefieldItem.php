@@ -26,20 +26,20 @@ class TablefieldItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public static function schema(FieldStorageDefinitionInterface $field_definition) {
-    return array(
-      'columns' => array(
-        'value' => array(
+    return [
+      'columns' => [
+        'value' => [
           'type' => 'blob',
           'size' => 'big',
           'serialize' => TRUE,
-        ),
-        'format' => array(
+        ],
+        'format' => [
           'type' => 'varchar',
           'length' => 255,
           'default value' => '',
-        ),
-      ),
-    );
+        ],
+      ],
+    ];
   }
 
 
@@ -47,76 +47,76 @@ class TablefieldItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public static function defaultFieldSettings() {
-    return array(
+    return [
       'export' => 0,
       'restrict_rebuild' => 1,
       'restrict_import' => 1,
       'lock_values' => 0,
       'cell_processing' => 0,
-      'empty_rules' => array(
+      'empty_rules' => [
         'ignore_table_structure' => 0,
         'ignore_table_header' => 0,
-      ),
-    );
+      ],
+    ];
   }
 
   /**
    * {@inheritdoc}
    */
   public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
-    $form = array();
+    $form = [];
     $settings = $this->getSettings();
 
-    $form['default_message'] = array(
+    $form['default_message'] = [
       '#type' => 'markup',
       '#markup' => $this->t('To specify a default table, use the &quot;Default Value&quot; above. There you can specify a default number of rows/columns and values.'),
-    );
-    $form['export'] = array(
+    ];
+    $form['export'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Allow users to export table data as CSV'),
       '#default_value' => $settings['export'],
-    );
-    $form['restrict_rebuild'] = array(
+    ];
+    $form['restrict_rebuild'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Restrict rebuilding to users with the permission "rebuild tablefield"'),
       '#default_value' => $settings['restrict_rebuild'],
-    );
-    $form['restrict_import'] = array(
+    ];
+    $form['restrict_import'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Restrict importing to users with the permission "import tablefield"'),
       '#default_value' => $settings['restrict_import'],
-    );
-    $form['lock_values'] = array(
+    ];
+    $form['lock_values'] = [
       '#type' => 'checkbox',
       '#title' => 'Lock table field defaults from further edits during node add/edit.',
       '#default_value' => $settings['lock_values'],
-    );
-    $form['cell_processing'] = array(
+    ];
+    $form['cell_processing'] = [
       '#type' => 'radios',
       '#title' => $this->t('Table cell processing'),
       '#default_value' => $settings['cell_processing'],
-      '#options' => array(
+      '#options' => [
         $this->t('Plain text'),
         $this->t('Filtered text (user selects input format)')
-      ),
-    );
-    $form['empty_rules'] = array(
+      ],
+    ];
+    $form['empty_rules'] = [
       '#type' => 'details',
       '#title' => $this->t('Rules for evaluating whether tablefield item should be considered empty'),
       '#open' => FALSE,
-    );
-    $form['empty_rules']['ignore_table_structure'] = array(
+    ];
+    $form['empty_rules']['ignore_table_structure'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Ignore table structure changes'),
       '#description' => $this->t('If checked, table structure, i.e. number of rows and cols will not be considered when evaluating whether tablefield item is empty or not. If unchecked, a table structure which is different from the one set in defaults will result in the tablefield item being considered not empty.'),
       '#default_value' => $settings['empty_rules']['ignore_table_structure'],
-    );
-    $form['empty_rules']['ignore_table_header'] = array(
+    ];
+    $form['empty_rules']['ignore_table_header'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Ignore table header'),
       '#description' => $this->t('If checked, tablefield item will be considered empty even if it does have a table header, i.e. even if first row of the table contains non-empty cells.'),
       '#default_value' => $settings['empty_rules']['ignore_table_header'],
-    );
+    ];
 
     return $form;
   }
@@ -173,10 +173,10 @@ class TablefieldItem extends FieldItemBase {
    */
   public static function generateSampleValue(FieldDefinitionInterface $field_definition) {
     // @TODO should field definition be counted?
-    return array(
+    return [
       'value' => [['Header 1', 'Header 2'], ['Data 1', 'Data 2']],
       'rebuild' => ['rows' => 2, 'cols' => 2],
-    );
+    ];
   }
 
   /**
@@ -216,10 +216,10 @@ class TablefieldItem extends FieldItemBase {
         $default_structure = $default_value[$this->name]['rebuild'];
       }
       else {
-        $default_structure = array(
+        $default_structure = [
           'rows' => \Drupal::config('tablefield.settings')->get('rows'),
           'cols' => \Drupal::config('tablefield.settings')->get('cols'),
-        );
+        ];
       }
 
       if (!empty($value['rebuild']) && $value['rebuild'] != $default_structure) {
