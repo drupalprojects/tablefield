@@ -18,22 +18,6 @@ function tablefield_uninstall() {
 }
 
 /**
- * Implements hook_enable().
- *
- * Notify content module when this module is enabled.
- */
-function tablefield_enable() {
-}
-
-/**
- * Implements hook_disable().
- *
- * Notify content module when this module is disabled.
- */
-function tablefield_disable() {
-}
-
-/**
  * Implements hook_update_dependencies().
  */
 function tablefield_update_dependencies() {
