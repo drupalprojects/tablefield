@@ -194,7 +194,7 @@ class TablefieldItem extends FieldItemBase {
     $in_settings = \Drupal::request()->get(RouteObjectInterface::ROUTE_NAME) == 'entity.field_config.node_field_edit_form';
 
     // check table data first
-    if (is_array($value['value'])) {
+    if (!empty($value) && is_array($value['value'])) {
 
       // ignore table header?
       if (!$in_settings && $empty_rules['ignore_table_header']) {
@@ -227,7 +227,7 @@ class TablefieldItem extends FieldItemBase {
         );
       }
 
-      if ($value['rebuild'] != $default_structure) {
+      if (!empty($value['rebuild']) && $value['rebuild'] != $default_structure) {
         return FALSE;
       }
     }
