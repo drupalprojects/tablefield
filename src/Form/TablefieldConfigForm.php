@@ -1,11 +1,17 @@
 <?php
 
+/**
+ * @file
+ */
+
 namespace Drupal\tablefield\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Component\Utility\Unicode;
-
+/**
+ *
+ */
 class TablefieldConfigForm extends ConfigFormBase {
 
   /**
@@ -15,6 +21,9 @@ class TablefieldConfigForm extends ConfigFormBase {
     return 'tablefield_config_form';
   }
 
+  /**
+   *
+   */
   protected function getEditableConfigNames() {
     return ['tablefield.settings'];
   }
@@ -75,4 +84,5 @@ class TablefieldConfigForm extends ConfigFormBase {
 
     parent::submitForm($form, $form_state);
   }
+
 }

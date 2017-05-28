@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @file
+ */
+
 namespace Drupal\tablefield\Plugin\Field\FieldType;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
@@ -97,7 +101,7 @@ class TablefieldItem extends FieldItemBase {
       '#default_value' => $settings['cell_processing'],
       '#options' => [
         $this->t('Plain text'),
-        $this->t('Filtered text (user selects input format)')
+        $this->t('Filtered text (user selects input format)'),
       ],
     ];
     $form['empty_rules'] = [
@@ -135,31 +139,34 @@ class TablefieldItem extends FieldItemBase {
     return $properties;
   }
 
+  /**
+   *
+   */
   public function setValue($values, $notify = TRUE) {
     if (!isset($values)) {
       return;
     }
-    // we want to keep the table right under the 'value' key
-    else if (!empty($values['tablefield'])) {
+    // We want to keep the table right under the 'value' key.
+    elseif (!empty($values['tablefield'])) {
       $values['rebuild'] = $values['tablefield']['rebuild'];
       $values['value'] = $values['tablefield']['table'];
       unset($values['tablefield']);
       unset($values['rebuild']['rebuild']);
     }
-    // in case cell_processing is enabled
-    // text_format puts values under an extra 'value' key
-    else if (!empty($values['value']['tablefield'])) {
+    // In case cell_processing is enabled
+    // text_format puts values under an extra 'value' key.
+    elseif (!empty($values['value']['tablefield'])) {
       $values['rebuild'] = $values['value']['tablefield']['rebuild'];
       $values['value'] = $values['value']['tablefield']['table'];
       unset($values['rebuild']['rebuild']);
     }
-    // in case this is being loaded from storage recalculate rows/cols
-    else if (empty($values['rebuild'])) {
+    // In case this is being loaded from storage recalculate rows/cols.
+    elseif (empty($values['rebuild'])) {
       $values['rebuild']['rows'] = isset($values['value']) ? count($values['value']) : 0;
       $values['rebuild']['cols'] = isset($values['value'][0]) ? count($values['value'][0]) : 0;
     }
 
-    // if lock defaults is enabled the table might need sorting
+    // If lock defaults is enabled the table might need sorting.
     $lock = $this->getFieldDefinition()->getSetting('lock_values');
     if ($lock) {
       ksort($values['value']);
@@ -188,10 +195,10 @@ class TablefieldItem extends FieldItemBase {
     $empty_rules = $this->getFieldDefinition()->getSetting('empty_rules');
     $in_settings = \Drupal::request()->get(RouteObjectInterface::ROUTE_NAME) == 'entity.field_config.node_field_edit_form';
 
-    // check table data first
+    // Check table data first.
     if (!empty($value) && is_array($value['value'])) {
 
-      // ignore table header?
+      // Ignore table header?
       if (!$in_settings && $empty_rules['ignore_table_header']) {
         array_shift($value['value']);
       }
@@ -205,10 +212,10 @@ class TablefieldItem extends FieldItemBase {
       }
     }
 
-    // if table structure is not ignored see if it differs from defaults
+    // If table structure is not ignored see if it differs from defaults
     // check the route to see if you are in the field settings form
     // if yes, defaults are the tablefield config defaults
-    // otherwise first consider field settings defaults
+    // otherwise first consider field settings defaults.
     if (empty($empty_rules['ignore_table_structure'])) {
       $default_value = $this->getFieldDefinition()->getDefaultValueLiteral();
 

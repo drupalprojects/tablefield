@@ -1,12 +1,15 @@
 <?php
 
+/**
+ * @file
+ */
+
 namespace Drupal\tablefield\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FormatterBase;
 use Drupal\Core\Url;
-//use Drupal\tablefield\Utility\Tablefield;
-
+// Use Drupal\tablefield\Utility\Tablefield;.
 /**
  * Plugin implementation of the default Tablefield formatter.
  *
@@ -33,25 +36,25 @@ class TablefieldFormatter extends FormatterBase {
     $entity_type = $entity->getEntityTypeId();
     $entity_id = $entity->id();
 
-
     $elements = [];
 
     foreach ($items as $delta => $table) {
 
       if (!empty($table->value)) {
-        $tabledata = $table->value;//Tablefield::rationalizeTable($table->value);
+        // Tablefield::rationalizeTable($table->value);.
+        $tabledata = $table->value;
 
-        // Run the table through input filters
+        // Run the table through input filters.
         foreach ($tabledata as $row_key => $row) {
           foreach ($row as $col_key => $cell) {
             $tabledata[$row_key][$col_key] = [
               'data' => empty($table->format) ? $cell : check_markup($cell, $table->format),
-              'class' => ['row_' . $row_key, 'col_' . $col_key]
+              'class' => ['row_' . $row_key, 'col_' . $col_key],
             ];
           }
         }
 
-        // Pull the header for theming
+        // Pull the header for theming.
         $header_data = array_shift($tabledata);
 
         // Check for an empty header, if so we don't want to theme it.
@@ -101,10 +104,10 @@ class TablefieldFormatter extends FormatterBase {
           '#attributes' => [
             'id' => 'tablefield-' . $delta,
             'class' => [
-              'tablefield'
+              'tablefield',
             ],
           ],
-          '#prefix' => '<div id="tablefield-wrapper-'. $delta .'" class="tablefield-wrapper">',
+          '#prefix' => '<div id="tablefield-wrapper-' . $delta . '" class="tablefield-wrapper">',
           '#suffix' => '</div>',
         ];
 

@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Installation options for TableField
+ * Installation options for TableField.
  */
 
 /**
@@ -30,6 +30,9 @@ function tablefield_update_dependencies() {
   return $dependencies;
 }
 
+/**
+ *
+ */
 function tablefield_repair_schema() {
   $spec = [
     'type' => 'varchar',

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @file
+ */
+
 namespace Drupal\tablefield\Plugin\Field\FieldWidget;
 
 use Drupal\Core\Field\FieldItemListInterface;
@@ -43,7 +47,7 @@ class TablefieldWidget extends WidgetBase {
       '#options' => [
         'textfield' => 'textfield',
         'textarea' => 'textarea',
-      ]
+      ],
     ];
 
     return $element;
@@ -77,14 +81,14 @@ class TablefieldWidget extends WidgetBase {
       $default_value = $items[$delta];
     }
     elseif (!$is_field_settings_default_widget_form && !empty($field_default)) {
-      // load field settings defaults in case current item is empty
+      // Load field settings defaults in case current item is empty.
       $default_value = $field_default;
     }
     else {
       $default_value = (object) ['value' => [], 'rebuild' => []];
     }
 
-    // make sure rows and cols are set
+    // Make sure rows and cols are set.
     $rows = isset($default_value->rebuild['rows']) ?
       $default_value->rebuild['rows'] : \Drupal::config('tablefield.settings')->get('rows');
 
@@ -111,7 +115,7 @@ class TablefieldWidget extends WidgetBase {
 
     $element['#element_validate'][] = [$this, 'validateTablefield'];
 
-    // Allow the user to select input filters
+    // Allow the user to select input filters.
     if (!empty($field_settings['cell_processing'])) {
       $element['#base_type'] = $element['#type'];
       $element['#type'] = 'text_format';
@@ -122,6 +126,9 @@ class TablefieldWidget extends WidgetBase {
     return $element;
   }
 
+  /**
+   *
+   */
   public function validateTablefield(array &$element, FormStateInterface &$form_state, array $form) {
     if ($element['#required'] && $form_state->getTriggeringElement()['#type'] == 'submit') {
       $items = new FieldItemList($this->fieldDefinition);
@@ -134,7 +141,7 @@ class TablefieldWidget extends WidgetBase {
 
   /**
    * {@inheritdoc}
-   * set error only on the first item in a multi-valued field
+   * set error only on the first item in a multi-valued field.
    */
   public function errorElement(array $element, ConstraintViolationInterface $violation, array $form, FormStateInterface $form_state) {
     return $element[0];

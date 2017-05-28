@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @file
+ */
 
 namespace Drupal\tablefield\Element;
 
@@ -44,10 +47,10 @@ class Tablefield extends FormElement {
     // Check if the input_type is one of the allowed types.
     $input_type = in_array($element['#input_type'], ['textarea', 'textfield']) ? $element['#input_type'] : 'textfield';
 
-    // string to uniquely identify DOM elements
+    // String to uniquely identify DOM elements.
     $id = implode('-', $element['#parents']);
 
-    // this is being set in rebuild and import ajax calls
+    // This is being set in rebuild and import ajax calls.
     $storage = NestedArray::getValue($form_state->getStorage(), $element['#parents']);
     if ($storage) {
       $element['#cols'] = $storage['tablefield']['rebuild']['cols'];
@@ -59,7 +62,7 @@ class Tablefield extends FormElement {
     $element['tablefield'] = [
       '#type' => 'fieldset',
       '#attributes' => ['class' => ['form-tablefield']],
-      '#prefix' => '<div id="tablefield-'. $id .'-wrapper">',
+      '#prefix' => '<div id="tablefield-' . $id . '-wrapper">',
       '#suffix' => '</div>',
     ];
 
@@ -86,8 +89,8 @@ class Tablefield extends FormElement {
             '#maxlength' => 2048,
             '#size' => 0,
             '#attributes' => [
-              'class' => ['tablefield-row-'. $i, 'tablefield-col-'. $ii],
-              'style' => 'width:100%'
+              'class' => ['tablefield-row-' . $i, 'tablefield-col-' . $ii],
+              'style' => 'width:100%',
             ],
             '#default_value' => $cell_value,
           ];
@@ -131,7 +134,7 @@ class Tablefield extends FormElement {
       $element['tablefield']['rebuild']['rebuild'] = [
         '#type' => 'submit',
         '#value' => t('Rebuild Table'),
-        '#name' => 'tablefield-rebuild-'. $id,
+        '#name' => 'tablefield-rebuild-' . $id,
         '#attributes' => [
           'class' => ['tablefield-rebuild'],
         ],
@@ -139,13 +142,13 @@ class Tablefield extends FormElement {
         '#ajax' => [
           'callback' => 'Drupal\tablefield\Element\Tablefield::ajaxCallbackRebuild',
           'progress' => ['type' => 'throbber', 'message' => NULL],
-          'wrapper' => 'tablefield-'. $id .'-wrapper',
+          'wrapper' => 'tablefield-' . $id . '-wrapper',
           'effect' => 'fade',
         ],
       ];
     }
 
-    // Allow import of a csv file
+    // Allow import of a csv file.
     if (!empty($element['#import'])) {
       $element['tablefield']['import'] = [
         '#type' => 'details',
@@ -153,7 +156,7 @@ class Tablefield extends FormElement {
         '#open' => FALSE,
       ];
       $element['tablefield']['import']['csv'] = [
-        '#name' => 'files['. $id .']',
+        '#name' => 'files[' . $id . ']',
         '#title' => 'File upload',
         '#type' => 'file',
       ];
@@ -161,7 +164,7 @@ class Tablefield extends FormElement {
       $element['tablefield']['import']['import'] = [
         '#type' => 'submit',
         '#value' => t('Upload CSV'),
-        '#name' => 'tablefield-import-'. $id,
+        '#name' => 'tablefield-import-' . $id,
         '#attributes' => [
           'class' => ['tablefield-rebuild'],
         ],
@@ -169,7 +172,7 @@ class Tablefield extends FormElement {
         '#ajax' => [
           'callback' => 'Drupal\tablefield\Element\Tablefield::ajaxCallbackRebuild',
           'progress' => ['type' => 'throbber', 'message' => NULL],
-          'wrapper' => 'tablefield-'. $id .'-wrapper',
+          'wrapper' => 'tablefield-' . $id . '-wrapper',
           'effect' => 'fade',
         ],
       ];
@@ -182,13 +185,14 @@ class Tablefield extends FormElement {
    * The basic idea is to descend down the list of #parent elements of the
    * triggering_element in order to locate the tablefield inside of the $form
    * array. That is the element that we need to return.
+   *
    * @param array $form
    * @param FormStateInterface $form_state
    */
   public static function ajaxCallbackRebuild(array $form, FormStateInterface $form_state) {
     $triggering_element = $form_state->getTriggeringElement();
 
-    // go as deep as 'tablefield' key, but stop there (two more keys follow)
+    // Go as deep as 'tablefield' key, but stop there (two more keys follow).
     $parents = array_slice($triggering_element['#array_parents'], 0, -2, TRUE);
     $rebuild = NestedArray::getValue($form, $parents);
 
@@ -199,23 +203,26 @@ class Tablefield extends FormElement {
     return $rebuild;
   }
 
+  /**
+   *
+   */
   public static function submitCallbackRebuild(array $form, FormStateInterface $form_state) {
-    // check what triggered this
-    // we might need to rebuild or to import
+    // Check what triggered this
+    // we might need to rebuild or to import.
     $triggering_element = $form_state->getTriggeringElement();
 
     $id = implode('-', array_slice($triggering_element['#parents'], 0, -3, TRUE));
     $parents = array_slice($triggering_element['#parents'], 0, -2, TRUE);
     $value = $form_state->getValue($parents);
 
-    if (isset($triggering_element['#name']) && $triggering_element['#name'] == 'tablefield-rebuild-'. $id) {
+    if (isset($triggering_element['#name']) && $triggering_element['#name'] == 'tablefield-rebuild-' . $id) {
       $parents[] = 'rebuild';
       NestedArray::setValue($form_state->getStorage(), $parents, $value['rebuild']);
 
       drupal_set_message(t('Table structure rebuilt.'), 'status', FALSE);
     }
-    elseif (isset($triggering_element['#name']) && $triggering_element['#name'] == 'tablefield-import-'. $id) {
-      // Import CSV
+    elseif (isset($triggering_element['#name']) && $triggering_element['#name'] == 'tablefield-import-' . $id) {
+      // Import CSV.
       $imported_tablefield = static::importCsv($id);
 
       if ($imported_tablefield) {
@@ -234,14 +241,16 @@ class Tablefield extends FormElement {
 
 
   /**
-   * Helper function to import data from a CSV file
+   * Helper function to import data from a CSV file.
+   *
    * @param string $form_field_name
+   *
    * @return array $tablefield
    */
   private static function importCsv($form_field_name) {
     $file_upload = \Drupal::request()->files->get("files[$form_field_name]", NULL, TRUE);
-    if (!empty($file_upload) && $handle = fopen($file_upload->getPathname(), 'r'))  {
-      // Populate CSV values
+    if (!empty($file_upload) && $handle = fopen($file_upload->getPathname(), 'r')) {
+      // Populate CSV values.
       $tablefield = [];
       $max_cols = 0;
       $rows = 0;
