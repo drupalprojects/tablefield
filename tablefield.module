@@ -65,9 +65,15 @@ function tablefield_permission() {
   return array(
     'export tablefield' => array(
       'title' => t('Export Tablefield Data as CSV'),
+      'description' => t('Acts in addition to the field widget settings (AND).'),
+    ),
+    'always use additional datasources' => array(
+      'title' => t('Always allow additional data sources to be used (CSV upload or copy/paste)'),
+      'description' => t('Overrides the field widget settings (OR).'),
     ),
     'rebuild tablefield' => array(
       'title' => t('Rebuild any tablefield'),
+      'description' => t('Overrides the field widget settings (OR).'),
     ),
     'configure tablefield' => array(
       'title' => t('Allow changes in the global tablefield module configuration'),
@@ -243,6 +249,16 @@ function tablefield_field_widget_settings_form($field, $instance) {
       t('Plain text'),
       t('Filtered text (user selects input format)'),
     ),
+  );
+  $form['data_sources'] = array(
+    '#type' => 'checkboxes',
+    '#title' => 'Additional data sources',
+    '#description' => t('Note this setting gets overridden for users with the permission "always use additional datasources".'),
+    '#options' => array(
+      'paste' => t('Copy & Paste'),
+      'upload' => t('Upload CSV file'),
+    ),
+    '#default_value' => isset($instance['widget']['settings']['data_sources']) ? $instance['widget']['settings']['data_sources'] : array('paste', 'upload'),
   );
 
   return $form;
@@ -1503,82 +1519,86 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     );
   }
 
-  // Allow the user to import a csv file.
-  $element['tablefield']['import'] = array(
-    '#type' => 'fieldset',
-    '#tree' => TRUE,
-    '#title' => t('Upload CSV file'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-  );
-  $element['tablefield']['import']['file'] = array(
-    '#name' => 'files[' . $import_id . ']',
-    '#title' => t('File upload'),
-    '#type' => 'file',
-  );
-  $element['tablefield']['import']['import'] = array(
-    '#type' => 'button',
-    '#validate' => array(),
-    '#limit_validation_errors' => array(),
-    '#executes_submit_callback' => TRUE,
-    '#submit' => array('tablefield_rebuild_form'),
-    '#value' => t('Upload CSV'),
-    '#name' => $import_id,
-    '#attributes' => array(
-      'class' => array('tablefield-rebuild'),
-    ),
-    '#ajax' => array(
-      'callback' => 'tablefield_rebuild_form_ajax',
-      'wrapper' => $ajax_wrapper_id,
-      'effect' => 'fade',
-    ),
-  );
+  if (user_access('always use additional datasources') || (isset($instance['widget']['settings']['data_sources']['upload']) && ($instance['widget']['settings']['data_sources']['upload'] === 'upload'))) {
+    // Allow the user to import a csv file.
+    $element['tablefield']['import'] = array(
+      '#type' => 'fieldset',
+      '#tree' => TRUE,
+      '#title' => t('Upload CSV file'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $element['tablefield']['import']['file'] = array(
+      '#name' => 'files[' . $import_id . ']',
+      '#title' => t('File upload'),
+      '#type' => 'file',
+    );
+    $element['tablefield']['import']['import'] = array(
+      '#type' => 'button',
+      '#validate' => array(),
+      '#limit_validation_errors' => array(),
+      '#executes_submit_callback' => TRUE,
+      '#submit' => array('tablefield_rebuild_form'),
+      '#value' => t('Upload CSV'),
+      '#name' => $import_id,
+      '#attributes' => array(
+        'class' => array('tablefield-rebuild'),
+      ),
+      '#ajax' => array(
+        'callback' => 'tablefield_rebuild_form_ajax',
+        'wrapper' => $ajax_wrapper_id,
+        'effect' => 'fade',
+      ),
+    );
+  }
 
-  // Allow user to paste data (e.g. from Excel).
-  $element['tablefield']['paste'] = array(
-    '#type' => 'fieldset',
-    '#tree' => TRUE,
-    '#title' => t('Copy & Paste'),
-    '#attributes' => array('class' => array('tablefield-extra tablefield-paste')),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-  );
-  $delimiters = array(
-    'TAB' => t('TAB'),
-    ',' => t('Comma ,'),
-    ';' => t('Semicolon ;'),
-    '|' => t('Pipe |'),
-    '+' => t('Plus +'),
-    ':' => t('Colon :'),
-  );
-  $element['tablefield']['paste']['paste_delimiter'] = array(
-    '#type' => 'select',
-    '#tree' => TRUE,
-    '#title' => t('Column separator'),
-    '#name' => 'delimiter[' . $pasted_id . ']',
-    '#options' => $delimiters,
-    '#description' => t('Data copied from Excel will use TAB.'),
-  );
-  $element['tablefield']['paste']['data'] = array(
-    '#type' => 'textarea',
-    '#tree' => TRUE,
-    '#name' => 'data[' . $pasted_id . ']',
-    '#title' => t('Paste table data here:'),
-  );
-  $element['tablefield']['paste']['paste_import'] = array(
-    '#type' => 'button',
-    '#validate' => array(),
-    '#limit_validation_errors' => array(),
-    '#executes_submit_callback' => TRUE,
-    '#submit' => array('tablefield_rebuild_form'),
-    '#value' => t('Import & Rebuild'),
-    '#name' => $pasted_id,
-    '#ajax' => array(
-      'callback' => 'tablefield_rebuild_form_ajax',
-      'wrapper' => $ajax_wrapper_id,
-      'effect' => 'fade',
-    ),
-  );
+  if (user_access('always use additional datasources') || (isset($instance['widget']['settings']['data_sources']['paste']) && ($instance['widget']['settings']['data_sources']['paste'] === 'paste'))) {
+    // Allow user to paste data (e.g. from Excel).
+    $element['tablefield']['paste'] = array(
+      '#type' => 'fieldset',
+      '#tree' => TRUE,
+      '#title' => t('Copy & Paste'),
+      '#attributes' => array('class' => array('tablefield-extra tablefield-paste')),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $delimiters = array(
+      'TAB' => t('TAB'),
+      ',' => t('Comma ,'),
+      ';' => t('Semicolon ;'),
+      '|' => t('Pipe |'),
+      '+' => t('Plus +'),
+      ':' => t('Colon :'),
+    );
+    $element['tablefield']['paste']['paste_delimiter'] = array(
+      '#type' => 'select',
+      '#tree' => TRUE,
+      '#title' => t('Column separator'),
+      '#name' => 'delimiter[' . $pasted_id . ']',
+      '#options' => $delimiters,
+      '#description' => t('Data copied from Excel will use TAB.'),
+    );
+    $element['tablefield']['paste']['data'] = array(
+      '#type' => 'textarea',
+      '#tree' => TRUE,
+      '#name' => 'data[' . $pasted_id . ']',
+      '#title' => t('Paste table data here:'),
+    );
+    $element['tablefield']['paste']['paste_import'] = array(
+      '#type' => 'button',
+      '#validate' => array(),
+      '#limit_validation_errors' => array(),
+      '#executes_submit_callback' => TRUE,
+      '#submit' => array('tablefield_rebuild_form'),
+      '#value' => t('Import & Rebuild'),
+      '#name' => $pasted_id,
+      '#ajax' => array(
+        'callback' => 'tablefield_rebuild_form_ajax',
+        'wrapper' => $ajax_wrapper_id,
+        'effect' => 'fade',
+      ),
+    );
+  }
 
   // Allow the user to select input filters.
   if (!empty($instance['widget']['settings']['cell_processing'])) {
