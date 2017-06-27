@@ -42,6 +42,7 @@ class Tablefield extends FormElement {
    * Processes a checkboxes form element.
    */
   public static function processTablefield(&$element, FormStateInterface $form_state, &$complete_form) {
+    $parents = $element['#parents'];
     $value = is_array($element['#value']) ? $element['#value'] : [];
 
     // Check if the input_type is one of the allowed types.
@@ -139,6 +140,11 @@ class Tablefield extends FormElement {
           'class' => ['tablefield-rebuild'],
         ],
         '#submit' => [[get_called_class(), 'submitCallbackRebuild']],
+        '#limit_validation_errors' => [
+          array_merge($parents, ['tablefield', 'rebuild', 'cols']),
+          array_merge($parents, ['tablefield', 'rebuild', 'rows']),
+          array_merge($parents, ['tablefield', 'rebuild', 'rebuild']),
+        ],
         '#ajax' => [
           'callback' => 'Drupal\tablefield\Element\Tablefield::ajaxCallbackRebuild',
           'progress' => ['type' => 'throbber', 'message' => NULL],
@@ -169,6 +175,10 @@ class Tablefield extends FormElement {
           'class' => ['tablefield-rebuild'],
         ],
         '#submit' => [[get_called_class(), 'submitCallbackRebuild']],
+        '#limit_validation_errors' => [
+          array_merge($parents, ['tablefield', 'import', 'csv']),
+          array_merge($parents, ['tablefield', 'import', 'import']),
+        ],
         '#ajax' => [
           'callback' => 'Drupal\tablefield\Element\Tablefield::ajaxCallbackRebuild',
           'progress' => ['type' => 'throbber', 'message' => NULL],
