@@ -10,7 +10,10 @@ INSTALLATION
 - Enable module at /admin/build/modules
 - Add a tablefield to an entity at /admin/structure
 
-AUTHOR/MAINTAINER
------------------
+AUTHOR/MAINTAINERS
+------------------
 - Kevin Hankens
 - http://www.kevinhankens.com
+
+- Martin Postma
+- http://www.martin.postma.website/
