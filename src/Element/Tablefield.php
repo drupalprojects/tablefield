@@ -1,9 +1,5 @@
 <?php
 
-/**
- * @file
- */
-
 namespace Drupal\tablefield\Element;
 
 use Drupal\Core\Render\Element\FormElement;
@@ -35,6 +31,8 @@ class Tablefield extends FormElement {
         [$class, 'processTablefield'],
       ],
       '#theme_wrappers' => ['form_element'],
+      '#addrow' => FALSE,
+      '#add_row' => 0,
     ];
   }
 
@@ -53,9 +51,13 @@ class Tablefield extends FormElement {
 
     // This is being set in rebuild and import ajax calls.
     $storage = NestedArray::getValue($form_state->getStorage(), $element['#parents']);
-    if ($storage) {
+    // Fetch addrow value.
+    if ($storage && isset($storage['tablefield']['rebuild'])) {
       $element['#cols'] = $storage['tablefield']['rebuild']['cols'];
       $element['#rows'] = $storage['tablefield']['rebuild']['rows'];
+    }
+    if ($storage && isset($storage['tablefield']['addrow'])) {
+      $element['#add_row'] = $storage['tablefield']['addrow']['row_value'];
     }
 
     $element['#tree'] = TRUE;
@@ -70,9 +72,17 @@ class Tablefield extends FormElement {
     $element['tablefield']['table'] = [
       '#type' => 'table',
     ];
-
+    // Assign value.
+    $row_value = isset($element['#add_row']) ? $element['#add_row'] : 0;
     $rows = isset($element['#rows']) ? $element['#rows'] : \Drupal::config('tablefield.settings')->get('rows');
     $cols = isset($element['#cols']) ? $element['#cols'] : \Drupal::config('tablefield.settings')->get('cols');
+
+    // Check condition.
+    $trigger_element = $form_state->getTriggeringElement();
+    if ($row_value != 0 && $trigger_element['#name'] == 'tablefield-addrow-' . $trigger_element['#parents'][0] . '-' . $trigger_element['#parents'][1]) {
+      $cols = $element['#value']['tablefield']['rebuild']['cols'];
+      $rows = $row_value;
+    }
 
     for ($i = 0; $i < $rows; $i++) {
       for ($ii = 0; $ii < $cols; $ii++) {
@@ -99,8 +109,33 @@ class Tablefield extends FormElement {
       }
     }
 
-    // If no rebuild, we pass along the rows/cols as a value.
-    // Otherwise, we will provide form elements to specify the size and ajax rebuild.
+    // To change number of rows.
+    if (!empty($element['#addrow'])) {
+      $element['tablefield']['addrow']['row_value'] = array(
+        '#title' => t('How many rows'),
+        '#type' => 'hidden',
+        '#default_value' => $rows,
+        '#value' => $rows,
+      );
+      $element['tablefield']['addrow']['addrow']    = array(
+        '#type' => 'submit',
+        '#value' => t('Add Row'),
+        '#name' => 'tablefield-addrow-' . $id,
+        '#attributes' => array(
+          'class' => array('tablefield-addrow'),
+        ),
+        '#submit' => array(array(get_called_class(), 'submitCallbackRebuild')),
+        '#ajax' => array(
+          'callback' => 'Drupal\tablefield\Element\Tablefield::ajaxCallbackRebuild',
+          'progress' => array('type' => 'throbber', 'message' => NULL),
+          'wrapper' => 'tablefield-' . $id . '-wrapper',
+          'effect' => 'fade',
+        ),
+      );
+    }
+
+    // If no rebuild, we pass along the rows/cols as a value. Otherwise, we will
+    // provide form elements to specify the size and ajax rebuild.
     if (empty($element['#rebuild'])) {
       $element['tablefield']['rebuild'] = [
         '#type' => 'value',
@@ -217,8 +252,7 @@ class Tablefield extends FormElement {
    *
    */
   public static function submitCallbackRebuild(array $form, FormStateInterface $form_state) {
-    // Check what triggered this
-    // we might need to rebuild or to import.
+    // Check what triggered this. We might need to rebuild or to import.
     $triggering_element = $form_state->getTriggeringElement();
 
     $id = implode('-', array_slice($triggering_element['#parents'], 0, -3, TRUE));
@@ -246,9 +280,15 @@ class Tablefield extends FormElement {
         NestedArray::setValue($form_state->getStorage(), $parents, $imported_tablefield['rebuild']);
       }
     }
+    // Ajax call.
+    elseif (isset($triggering_element['#name']) && $triggering_element['#name'] == 'tablefield-addrow-' . $id) {
+      $parents[] = 'addrow';
+      $rows = $value['table']['setrow'] + 1;
+      $value['addrow']['row_value'] = $value['addrow']['row_value'] + 1;
+      NestedArray::setValue($form_state->getStorage(), $parents, $value['addrow']);
+    }
     $form_state->setRebuild();
   }
-
 
   /**
    * Helper function to import data from a CSV file.

@@ -1,9 +1,5 @@
 <?php
 
-/**
- * @file
- */
-
 namespace Drupal\tablefield\Plugin\Field\FieldWidget;
 
 use Drupal\Core\Field\FieldItemListInterface;
@@ -11,7 +7,6 @@ use Drupal\Core\Field\FieldItemList;
 use Drupal\Core\Field\WidgetBase;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\Validator\ConstraintViolationInterface;
-
 
 /**
  * Plugin implementation of the 'tablefield' widget.
@@ -107,6 +102,8 @@ class TablefieldWidget extends WidgetBase {
       '#locked_cells' => !empty($field_default->value) ? $field_default->value : [],
       '#rebuild' => \Drupal::currentUser()->hasPermission('rebuild tablefield'),
       '#import' => \Drupal::currentUser()->hasPermission('import tablefield'),
+    // Add permission.
+      '#addrow' => \Drupal::currentUser()->hasPermission('addrow tablefield'),
     ] + $element;
 
     if ($is_field_settings_default_widget_form) {

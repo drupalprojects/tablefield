@@ -1,14 +1,11 @@
 <?php
 
-/**
- * @file
- */
-
 namespace Drupal\tablefield\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Component\Utility\Unicode;
+
 /**
  *
  */

@@ -1,14 +1,11 @@
 <?php
 
-/**
- * @file
- */
-
 namespace Drupal\tablefield\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FormatterBase;
 use Drupal\Core\Url;
+
 // Use Drupal\tablefield\Utility\Tablefield;.
 /**
  * Plugin implementation of the default Tablefield formatter.

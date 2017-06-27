@@ -1,9 +1,5 @@
 <?php
 
-/**
- * @file
- */
-
 namespace Drupal\tablefield\Controller;
 
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -40,7 +36,7 @@ class TablefieldController {
     $separator = \Drupal::config('tablefield.settings')->get('csv_separator');
 
     $response = new StreamedResponse();
-    $response->setCallback(function() use ($table, $separator) {
+    $response->setCallback(function () use ($table, $separator) {
       ob_clean();
       $handle = fopen('php://output', 'w+');
       if (!empty($table) && $handle) {

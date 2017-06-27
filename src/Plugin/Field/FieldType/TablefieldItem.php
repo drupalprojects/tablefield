@@ -1,10 +1,7 @@
 <?php
 
-/**
- * @file
- */
-
 namespace Drupal\tablefield\Plugin\Field\FieldType;
+
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -45,7 +42,6 @@ class TablefieldItem extends FieldItemBase {
       ],
     ];
   }
-
 
   /**
    * {@inheritdoc}
