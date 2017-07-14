@@ -131,7 +131,7 @@ class TablefieldWidget extends WidgetBase {
       $items = new FieldItemList($this->fieldDefinition);
       $this->extractFormValues($items, $form, $form_state);
       if (!$items->count()) {
-        $form_state->setError($element, t('!name field is required.', ['!name' => $this->fieldDefinition->getLabel()]));
+        $form_state->setError($element, t('@name field is required.', ['@name' => $this->fieldDefinition->getLabel()]));
       }
     }
   }
