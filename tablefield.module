@@ -602,7 +602,7 @@ function tablefield_field_formatter_settings_summary($field, $instance, $view_mo
           'title' => t('Manage user permissions'),
         ),
       ));
-      $summary[] = t('Show link to export table data as CSV depending on !permission: %tr', array('%tr' => ($settings['hide_cols_skip_head']) ? t('Yes') : t('No'), '!permission' => $permission));
+      $summary[] = t('Show link to export table data as CSV depending on !permission: %tr', array('%tr' => ($settings['export_csv']) ? t('Yes') : t('No'), '!permission' => $permission));
   }
   return implode('<br />', $summary);;
 }
@@ -757,6 +757,7 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
       );
       $element['hide_cols_skip_head'] = array(
         '#title' => t('Hide empty columns ignoring column header'),
+        '#description' => t('This will remove the table field completely if all columns are empty including the field label.'),
         '#type' => 'checkbox',
         '#default_value' => $settings['hide_cols_skip_head'],
       );
@@ -779,11 +780,6 @@ function tablefield_field_formatter_settings_form($field, $instance, $view_mode,
         '#title' => t('Hide empty columns'),
         '#type' => 'checkbox',
         '#default_value' => $settings['hide_empty_cols'],
-      );
-      $element['hide_cols_skip_head'] = array(
-        '#title' => t('Hide empty columns ignoring column header'),
-        '#type' => 'checkbox',
-        '#default_value' => $settings['hide_cols_skip_head'],
       );
       $permission = l(t('permission'), 'admin/people/permissions', array(
         'fragment' => 'module-tablefield',
@@ -1128,24 +1124,27 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
 
             // Remove the first row from the tabledata.
             array_shift($tabledata);
-            // Theme the table for display.
-            $element[$delta] = array(
-              '#theme' => 'tablefield_view',
-              '#caption' => $caption,
-              '#header_orientation' => isset($settings['header_orientation']) ? $settings['header_orientation'] : 'Horizontal',
-              '#sticky' => isset($settings['sticky_header']) ? $settings['sticky_header'] : NULL,
-              '#striping' => isset($settings['striping']) ? $settings['striping'] : NULL,
-              '#sortable' => isset($settings['sortable']) ? $settings['sortable'] : NULL,
-              '#header' => $header,
-              '#rows' => $tabledata,
-              '#delta' => $delta,
-              '#export' => isset($settings['export_csv']) ? $settings['export_csv'] : NULL,
-              '#entity_type' => $entity_type,
-              '#entity_id' => $entity_id,
-              '#field_name' => $field['field_name'],
-              '#langcode' => $langcode,
-              '#formatter' => $formatter,
-            );
+            // Theme the table for display, but only if we have printable
+            // table data.
+            if (!$settings['hide_cols_skip_head'] || $tabledata || $header) {
+              $element[$delta] = array(
+                '#theme' => 'tablefield_view',
+                '#caption' => $caption,
+                '#header_orientation' => isset($settings['header_orientation']) ? $settings['header_orientation'] : 'Horizontal',
+                '#sticky' => isset($settings['sticky_header']) ? $settings['sticky_header'] : NULL,
+                '#striping' => isset($settings['striping']) ? $settings['striping'] : NULL,
+                '#sortable' => isset($settings['sortable']) ? $settings['sortable'] : NULL,
+                '#header' => $header,
+                '#rows' => $tabledata,
+                '#delta' => $delta,
+                '#export' => isset($settings['export_csv']) ? $settings['export_csv'] : NULL,
+                '#entity_type' => $entity_type,
+                '#entity_id' => $entity_id,
+                '#field_name' => $field['field_name'],
+                '#langcode' => $langcode,
+                '#formatter' => $formatter,
+              );
+            }
           }
         }
     }
