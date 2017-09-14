@@ -183,7 +183,46 @@ function tablefield_item_property_info() {
     'getter callback' => 'tablefield_get_table_value',
   );
 
+  $properties['value'] = array(
+    'type' => 'text',
+    'label' => t('The value column of the table.'),
+    'computed' => TRUE,
+    'getter callback' => 'tablefield_value_array_get',
+    // @todo: can we support setting via an array submitted from REST?
+    // 'setter callback' => 'tablefield_value_array_set',
+  );
+
   return $properties;
+}
+
+/**
+ *
+ */
+function tablefield_tablefield_to_array($trat) {
+  // Translate tablefield to associative array.
+  $ttrans = array();
+  $rowkey = 0;
+  foreach ($trat as $rowix => $rowvals) {
+    foreach ($rowvals as $ix => $val) {
+      $ttrans[$rowkey][] = $val;
+    }
+    $rowkey++;
+  }
+  return $ttrans;
+}
+
+/**
+ * Get the value property in formatted array.
+ */
+function tablefield_value_array_get($data, array $options, $name, $type, $info) {
+
+  if (isset($data['tabledata']['tabledata'])) {
+    $data['value'] = tablefield_tablefield_to_array($data['tabledata']['tabledata']);
+  }
+  elseif (isset($data['tablefield']['tabledata'])) {
+    $data['value'] = tablefield_tablefield_to_array($data['tablefield']['tabledata']);
+  }
+  return $data['value'];
 }
 
 /**
