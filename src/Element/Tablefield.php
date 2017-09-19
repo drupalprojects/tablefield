@@ -56,9 +56,6 @@ class Tablefield extends FormElement {
       $element['#cols'] = $storage['tablefield']['rebuild']['cols'];
       $element['#rows'] = $storage['tablefield']['rebuild']['rows'];
     }
-    if ($storage && isset($storage['tablefield']['addrow'])) {
-      $element['#add_row'] = $storage['tablefield']['addrow']['row_value'];
-    }
 
     $element['#tree'] = TRUE;
 
@@ -73,16 +70,8 @@ class Tablefield extends FormElement {
       '#type' => 'table',
     ];
     // Assign value.
-    $row_value = isset($element['#add_row']) ? $element['#add_row'] : 0;
     $rows = isset($element['#rows']) ? $element['#rows'] : \Drupal::config('tablefield.settings')->get('rows');
     $cols = isset($element['#cols']) ? $element['#cols'] : \Drupal::config('tablefield.settings')->get('cols');
-
-    // Check condition.
-    $trigger_element = $form_state->getTriggeringElement();
-    if ($row_value != 0 && $trigger_element['#name'] == 'tablefield-addrow-' . $trigger_element['#parents'][0] . '-' . $trigger_element['#parents'][1]) {
-      $cols = $element['#value']['tablefield']['rebuild']['cols'];
-      $rows = $row_value;
-    }
 
     for ($i = 0; $i < $rows; $i++) {
       for ($ii = 0; $ii < $cols; $ii++) {
@@ -125,6 +114,11 @@ class Tablefield extends FormElement {
           'class' => array('tablefield-addrow'),
         ),
         '#submit' => array(array(get_called_class(), 'submitCallbackRebuild')),
+        '#limit_validation_errors' => [
+          array_merge($parents, ['tablefield', 'rebuild', 'cols']),
+          array_merge($parents, ['tablefield', 'rebuild', 'rows']),
+          array_merge($parents, ['tablefield', 'rebuild', 'rebuild']),
+        ],
         '#ajax' => array(
           'callback' => 'Drupal\tablefield\Element\Tablefield::ajaxCallbackRebuild',
           'progress' => array('type' => 'throbber', 'message' => NULL),
@@ -161,6 +155,7 @@ class Tablefield extends FormElement {
         '#size' => 5,
         '#default_value' => $cols,
       ];
+
       $element['tablefield']['rebuild']['rows'] = [
         '#title' => t('How many Rows'),
         '#type' => 'textfield',
@@ -222,6 +217,7 @@ class Tablefield extends FormElement {
         ],
       ];
     }
+
     return $element;
   }
 
@@ -244,6 +240,7 @@ class Tablefield extends FormElement {
     // We don't want to re-send the format/_weight options.
     unset($rebuild['format']);
     unset($rebuild['_weight']);
+    $rebuild['rebuild']['rows']['#value'] = $rebuild['rebuild']['rows']['#default_value'];
 
     return $rebuild;
   }
@@ -259,8 +256,11 @@ class Tablefield extends FormElement {
     $parents = array_slice($triggering_element['#parents'], 0, -2, TRUE);
     $value = $form_state->getValue($parents);
 
-    if (isset($triggering_element['#name']) && $triggering_element['#name'] == 'tablefield-rebuild-' . $id) {
+    if (isset($triggering_element['#name']) && $triggering_element['#name'] == 'tablefield-rebuild-' . $id || isset($triggering_element['#name']) && $triggering_element['#name'] == 'tablefield-addrow-' . $id) {
       $parents[] = 'rebuild';
+      if (isset($triggering_element['#name']) && $triggering_element['#name'] == 'tablefield-addrow-' . $id) {
+        $value['rebuild']['rows']++;
+      }
       NestedArray::setValue($form_state->getStorage(), $parents, $value['rebuild']);
 
       drupal_set_message(t('Table structure rebuilt.'), 'status', FALSE);
@@ -280,13 +280,7 @@ class Tablefield extends FormElement {
         NestedArray::setValue($form_state->getStorage(), $parents, $imported_tablefield['rebuild']);
       }
     }
-    // Ajax call.
-    elseif (isset($triggering_element['#name']) && $triggering_element['#name'] == 'tablefield-addrow-' . $id) {
-      $parents[] = 'addrow';
-      $rows = $value['table']['setrow'] + 1;
-      $value['addrow']['row_value'] = $value['addrow']['row_value'] + 1;
-      NestedArray::setValue($form_state->getStorage(), $parents, $value['addrow']);
-    }
+
     $form_state->setRebuild();
   }
 
