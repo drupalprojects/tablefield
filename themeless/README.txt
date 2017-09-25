@@ -22,5 +22,7 @@ Provides themeless output of a node's tablefield on the path 'node/%/themeless'.
 
 - Only the first found TableField field will be included in the output (also
   multivalue).
-- Enable https://www.drupal.org/project/subpathauto to have URLs with aliases
-  accessible for the themeless output, e.g. ../my/custom/alias/themeless.
+- URLs with aliases are accessible for the themeless output,
+  e.g. ../my/custom/alias/themeless.
+- Add 'Disallow: */themeless' in the robots.txt file found in the root of the
+  Drupal install. This should avoid these pages being indexed by Search Engines.

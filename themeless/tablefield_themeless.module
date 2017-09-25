@@ -21,6 +21,29 @@ function tablefield_themeless_menu() {
 }
 
 /**
+ * Implements hook_url_inbound_alter().
+ *
+ * Point 'some/alias/themeless' to 'node/123/themeless'.
+ */
+function tablefield_themeless_url_inbound_alter(&$path, $original_path, $language) {
+  if (preg_match('@^(.+)/themeless$@', $path, $matches)) {
+    $path = drupal_get_normal_path($matches[1]) . '/themeless';
+  }
+}
+
+/**
+ * Implements hook_url_outbound_alter().
+ *
+ * Creates the actual alias for the subpath.
+ */
+function tablefield_themeless_url_outbound_alter(&$path, &$options, $original_path) {
+  if (preg_match('@^(.+)/themeless$@', $path, $matches)) {
+    $path = drupal_get_normal_path($matches[1]) . '/themeless';
+    $options['alias'] = $matches[0];
+  }
+}
+
+/**
  * Implements hook_menu_local_tasks_alter().
  */
 function tablefield_themeless_menu_local_tasks_alter(&$data, $router_item, $root_path) {
