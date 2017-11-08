@@ -1481,11 +1481,20 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
     '#default_value' => '',
     '#description' => t('This brief caption will be associated with the table and will help Assitive Technology, like screen readers, better describe the content within.'),
   );
-  if (isset($items[$delta]['value'])) {
+
+  // Could be the Paragraphs module.
+  if (isset($items[$delta]['tablefield'])) {
+    $raw = $items[$delta]['tablefield'];
+  }
+  elseif (isset($items[$delta]['value'])) {
     $raw = unserialize($items[$delta]['value']);
-    if (isset($raw['caption'])) {
-      $element['tablefield']['caption']['#default_value'] = check_plain($raw['caption']);
-    }
+  }
+  // If still nothing then get the instance default, but only for delta 0.
+  elseif ($delta === 0 && isset($instance['default_value'][0]['tablefield'])) {
+    $raw = $instance['default_value'][0]['tablefield'];
+  }
+  if (isset($raw['caption'])) {
+    $element['tablefield']['caption']['#default_value'] = check_plain($raw['caption']);
   }
 
   // If the user doesn't have rebuild perms, we pass along the data as a value.
