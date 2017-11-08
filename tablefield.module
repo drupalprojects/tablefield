@@ -1162,7 +1162,9 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
             $entity_id = !empty($entity_info['entity keys']['id']) ? $entity->{$entity_info['entity keys']['id']} : NULL;
 
             // Remove the first row from the tabledata.
-            array_shift($tabledata);
+            if ((empty($settings['hide_header']) && $header_data) || $settings['hide_header']) {
+              array_shift($tabledata);
+            }
             // Theme the table for display, but only if we have printable
             // table data.
             if (!$settings['hide_cols_skip_head'] || $tabledata || $header) {
