@@ -1917,9 +1917,10 @@ function tablefield_theme() {
  */
 function theme_tablefield_view($variables) {
   $sortable = $variables['sortable'] ? 'tablesorter' : NULL;
+  $cols_class = isset($variables['header']) ? 'tablefield-columns-' . count($variables['header']) : NULL;
   $attributes = array(
     'id' => 'tablefield-' . $variables['delta'],
-    'class' => array('tablefield', $sortable),
+    'class' => array('tablefield', $sortable, $cols_class),
   );
 
   // Apply scope property to headers for accessibility.
