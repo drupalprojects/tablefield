@@ -1655,6 +1655,17 @@ function tablefield_field_widget_form(&$form, &$form_state, $field, $instance, $
 }
 
 /**
+ * Implements hook_custom_theme().
+ */
+function tablefield_custom_theme() {
+  // Ensure that if this is a valid POST request that we use the same theme
+  // used by the referring form.
+  if (isset($_POST['form_build_id']) && path_is_admin($_GET['q'])) {
+    return variable_get('admin_theme');
+  }
+}
+
+/**
  * Custom callback for a textarea to be processed for linebreaks.
  */
 function _cell_validate($element, &$form_state) {
