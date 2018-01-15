@@ -1916,10 +1916,11 @@ function tablefield_theme() {
  * Theme function for table view.
  */
 function theme_tablefield_view($variables) {
+  $id = $variables['entity_type'] . '-' . $variables['entity_id'] . '-' . $variables['field_name'] . '-' . $variables['delta'];
   $sortable = $variables['sortable'] ? 'tablesorter' : NULL;
   $cols_class = isset($variables['header']) ? 'tablefield-columns-' . count($variables['header']) : NULL;
   $attributes = array(
-    'id' => 'tablefield-' . $variables['delta'],
+    'id' => 'tablefield-' . $id,
     'class' => array('tablefield', $sortable, $cols_class),
   );
 
@@ -1934,7 +1935,7 @@ function theme_tablefield_view($variables) {
   $export = '';
   if ($variables['export'] && user_access('export tablefield')) {
     $url = sprintf('tablefield/export/%s/%s/%s/%s/%s', $variables['entity_type'], $variables['entity_id'], $variables['field_name'], $variables['langcode'], $variables['delta']);
-    $export = '<div id="' . drupal_html_id('tablefield-export-link-' . $variables['delta']) . '" class="tablefield-export-link">' . l(t('Export Table Data'), $url) . '</div>';
+    $export = '<div id="' . drupal_html_id('tablefield-export-link-' . $id) . '" class="tablefield-export-link">' . l(t('Export Table Data'), $url) . '</div>';
   }
 
   // Prepare variables for theme_tablefield().
@@ -1960,7 +1961,7 @@ function theme_tablefield_view($variables) {
   if (isset($variables['sortable'])) {
     $theme_variables['sortable'] = $variables['sortable'];
   }
-  return '<div id="' . drupal_html_id('tablefield-wrapper-' . $variables['delta']) . '" class="tablefield-wrapper">'
+  return '<div id="' . drupal_html_id('tablefield-wrapper-' . $id) . '" class="tablefield-wrapper">'
     . theme('tablefield', $theme_variables)
     . $export
     . '</div>';
