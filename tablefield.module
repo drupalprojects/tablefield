@@ -699,7 +699,7 @@ function tablefield_field_formatter_view($entity_type, $entity, $field, $instanc
             $element[$delta] = array(
               '#theme' => 'tablefield_view',
               '#attributes' => array(
-                'id' => drupal_html_id('tablefield-' . $delta),
+                'id' => drupal_html_id('tablefield-' . $entity_type . '-' . $entity_id . '-' . $field['field_name'] . '-' . $delta),
                 'class' => array('tablefield'),
               ),
               '#caption' => $caption,
@@ -1340,9 +1340,11 @@ function tablefield_theme() {
  * Theme function for table view.
  */
 function theme_tablefield_view($variables) {
+  $id = $variables['entity_type'] . '-' . $variables['entity_id'] . '-' . $variables['field_name'] . '-' . $variables['delta'];
+
   $attributes = $variables['attributes'] + array(
-    'id' => drupal_html_id('tablefield-' . $variables['delta']),
-    'class' => array('tablefield', 'tablefield-' . $variables['delta']),
+    'id' => drupal_html_id('tablefield-' . $id),
+    'class' => array('tablefield', 'tablefield-' . $id),
   );
 
   // Apply scope property to headers for accessibility.
@@ -1356,7 +1358,7 @@ function theme_tablefield_view($variables) {
   $export = '';
   if ($variables['export'] && user_access('export tablefield')) {
     $url = sprintf('tablefield/export/%s/%s/%s/%s/%s', $variables['entity_type'], $variables['entity_id'], $variables['field_name'], $variables['langcode'], $variables['delta']);
-    $export = '<div id="' . drupal_html_id('tablefield-export-link-' . $variables['delta']) . '" class="tablefield-export-link">' . l(t('Export Table Data'), $url) . '</div>';
+    $export = '<div id="' . drupal_html_id('tablefield-export-link-' . $id) . '" class="tablefield-export-link">' . l(t('Export Table Data'), $url) . '</div>';
   }
 
   // Prepare variables for theme_table().
@@ -1371,7 +1373,7 @@ function theme_tablefield_view($variables) {
   if (isset($variables['sticky'])) {
     $theme_variables['sticky'] = $variables['sticky'];
   }
-  return '<div id="' . drupal_html_id('tablefield-wrapper-' . $variables['delta']) . '" class="tablefield-wrapper">'
+  return '<div id="' . drupal_html_id('tablefield-wrapper-' . $id) . '" class="tablefield-wrapper">'
     . theme('table__tablefield', $theme_variables)
     . $export
     . '</div>';
