@@ -83,7 +83,7 @@ class TablefieldFormatter extends FormatterBase {
           $render_array['export'] = [
             '#type' => 'container',
             '#attributes' => [
-              'id' => 'tablefield-export-link-' . $delta,
+              'id' => 'tablefield-export-link-' . $entity_type . '-' . $entity_id . '-' . $field_name . '-' . $delta,
               'class' => 'tablefield-export-link',
             ],
           ];
@@ -99,12 +99,12 @@ class TablefieldFormatter extends FormatterBase {
           '#header' => $header,
           '#rows' => $tabledata,
           '#attributes' => [
-            'id' => 'tablefield-' . $delta,
+            'id' => 'tablefield-' . $entity_type . '-' . $entity_id . '-' . $field_name . '-' . $delta,
             'class' => [
               'tablefield',
             ],
           ],
-          '#prefix' => '<div id="tablefield-wrapper-' . $delta . '" class="tablefield-wrapper">',
+          '#prefix' => '<div id="tablefield-wrapper-' . $entity_type . '-' . $entity_id . '-' . $field_name . '-' . $delta . '" class="tablefield-wrapper">',
           '#suffix' => '</div>',
         ];
 
